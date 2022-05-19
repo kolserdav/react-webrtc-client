@@ -1,6 +1,6 @@
 import React from 'react';
-// Some child component of module
-import Header from './ui/Header';
+import { BrowserRouter } from 'react-router-dom';
+import Router from './components/Router/Router';
 import { REPOSITORY } from './utils';
 
 /**
@@ -13,9 +13,9 @@ interface MainProps {
 
 function Main({ test }: MainProps) {
   return (
-    <Header>
-      React Library Component. Show <a href={REPOSITORY}>{REPOSITORY}</a>
-    </Header>
+    <BrowserRouter>
+      <Router port={9000} host="192.168.0.3" path="/" />
+    </BrowserRouter>
   );
 }
 
