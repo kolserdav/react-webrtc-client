@@ -22,7 +22,7 @@
     "sourceType": "module"
   },
   "plugins": ["@typescript-eslint", "react", "prettier", "eslint-plugin-prettier"],
-  "ignorePatterns": ["src/dist/*"],
+  "ignorePatterns": ["src/dist/*", "peerjs-server/*"],
   "rules": {
     "react/react-in-jsx-scope": 2,
     "prettier/prettier": 1,
