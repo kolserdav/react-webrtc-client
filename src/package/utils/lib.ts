@@ -1,5 +1,6 @@
 /* eslint-disable import/no-relative-packages */
 import type { DataConnection } from 'peerjs';
+import React from 'react';
 import { Peer } from '../../../peerjs';
 
 const users: string[] = [];
@@ -13,9 +14,10 @@ const removeDisconnected = ({
 }) => {
   const { current } = videoContainer;
   if (current) {
-    const { children } = current;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { children }: any = current;
     for (let i = 0; children[i]; i++) {
-      const child = children[i];
+      const child: HTMLDivElement = children[i];
       if (child.getAttribute('id') === userId) {
         current.removeChild(child);
       }
@@ -32,7 +34,7 @@ const sendMessage = async ({
   peer: Peer;
   value: string[];
   id: string;
-  type: 'connect' | 'onconnect' | 'adduser';
+  type: 'connect' | 'onconnect' | 'dropuser';
 }): Promise<1 | 0> => {
   const connection = peer.connect(id);
   return new Promise((resolve) => {
@@ -76,7 +78,7 @@ const addVideoStream = ({
   }
   if (height) {
     const _height = self ? height / 2 : height;
-    video.setAttribute('heifht', _height.toString());
+    video.setAttribute('height', _height.toString());
   }
   video.addEventListener('loadedmetadata', () => {
     const div = document.createElement('div');
@@ -309,6 +311,7 @@ const listenRoomAnswer = ({
         }
         break;
       case 'onconnect':
+        // Call from new guest to other guests
         value.forEach((item) => {
           if (item !== roomId) {
             loadSelfStreamAndCallToRoom({
@@ -324,6 +327,12 @@ const listenRoomAnswer = ({
               restart: true,
             });
           }
+        });
+        break;
+      case 'dropuser':
+        removeDisconnected({
+          videoContainer,
+          userId: value[0],
         });
         break;
       default:
@@ -384,6 +393,15 @@ export const loadRoom = ({
           userId: guestId,
         });
         users.splice(users.indexOf(guestId), 1);
+        // Send to guests for drop disconnected
+        users.forEach((item) => {
+          sendMessage({
+            type: 'dropuser',
+            peer,
+            value: [guestId],
+            id: item,
+          });
+        });
         // eslint-disable-next-line no-console
         console.info('Event', { type: 'disconnect', value: guestId });
       });
@@ -412,5 +430,8 @@ export const loadRoom = ({
       videoClassName,
       nameClassName,
     });
+  });
+  peer.on('disconnected', () => {
+    /** */
   });
 };
