@@ -1,6 +1,7 @@
 /* eslint-disable import/no-relative-packages */
 import type { DataConnection } from 'peerjs';
 import { Peer } from '../../../peerjs';
+import s from '../Main.module.scss';
 
 let users: string[] = [];
 
@@ -32,7 +33,7 @@ const sendMessage = async ({
   peer: Peer;
   value: string[];
   id: string;
-  type: 'connect' | 'onconnect';
+  type: 'connect' | 'onconnect' | 'adduser';
 }): Promise<1 | 0> => {
   const connection = peer.connect(id);
   return new Promise((resolve) => {
@@ -50,6 +51,8 @@ const addVideoStream = ({
   videoContainer,
   width,
   height,
+  videoClassName,
+  nameClassName,
 }: {
   stream: MediaStream;
   id: string;
@@ -57,6 +60,8 @@ const addVideoStream = ({
   width?: number;
   height?: number;
   self?: boolean;
+  videoClassName?: string;
+  nameClassName: string;
 }): void => {
   const video = document.createElement('video');
   const localStream = stream;
@@ -65,20 +70,18 @@ const addVideoStream = ({
   }
   // eslint-disable-next-line no-param-reassign
   video.srcObject = localStream;
-  video.setAttribute('id', id);
+
   if (width) {
-    video.setAttribute('width', width.toString());
+    const _width = self ? width / 2 : width;
+    video.setAttribute('width', _width.toString());
   }
   if (height) {
-    video.setAttribute('heifht', height.toString());
+    const _height = self ? height / 2 : height;
+    video.setAttribute('heifht', _height.toString());
   }
   video.addEventListener('loadedmetadata', () => {
-    video.play();
-    if (self) {
-      video.setAttribute('style', 'margin: 1rem; box-shadow: 10px 5px 5px purple;');
-    } else {
-      video.setAttribute('style', 'margin: 1rem;');
-    }
+    const div = document.createElement('div');
+    div.setAttribute('id', id);
     const { current } = videoContainer;
     let match = false;
     if (current) {
@@ -91,7 +94,18 @@ const addVideoStream = ({
       }
     }
     if (!match) {
-      videoContainer.current?.append(video);
+      const title = document.createElement('p');
+      title.innerHTML = id;
+      if (nameClassName) {
+        title.classList.add(nameClassName);
+      }
+      if (videoClassName) {
+        div.classList.add(videoClassName);
+      }
+      div.append(title);
+      div.append(video);
+      videoContainer.current?.append(div);
+      video.play();
     }
   });
 };
@@ -104,6 +118,8 @@ const callToRoom = ({
   peer,
   width,
   height,
+  videoClassName,
+  nameClassName,
 }: {
   stream: MediaStream;
   videoContainer: React.RefObject<HTMLDivElement>;
@@ -112,6 +128,8 @@ const callToRoom = ({
   peer: Peer;
   width?: number;
   height?: number;
+  videoClassName?: string;
+  nameClassName: string;
 }) => {
   // If guest that call to room
   if (roomId) {
@@ -119,10 +137,12 @@ const callToRoom = ({
     call.on('stream', (remoteStream) => {
       addVideoStream({
         stream: remoteStream,
-        id,
+        id: roomId,
         videoContainer,
         width,
         height,
+        videoClassName,
+        nameClassName,
       });
     });
   }
@@ -137,6 +157,8 @@ const loadSelfStreamAndCallToRoom = ({
   width,
   height,
   restart,
+  videoClassName,
+  nameClassName,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
@@ -146,6 +168,8 @@ const loadSelfStreamAndCallToRoom = ({
   width?: number;
   height?: number;
   restart?: boolean;
+  videoClassName?: string;
+  nameClassName: string;
 }) => {
   // Load self stream
   navigator.mediaDevices
@@ -159,6 +183,8 @@ const loadSelfStreamAndCallToRoom = ({
           videoContainer: videoContainerSelf,
           width,
           height,
+          videoClassName,
+          nameClassName,
         });
       }
       callToRoom({
@@ -169,6 +195,8 @@ const loadSelfStreamAndCallToRoom = ({
         width,
         roomId,
         height,
+        videoClassName,
+        nameClassName,
       });
     })
     .catch((err) => {
@@ -201,11 +229,15 @@ const listenIncomingCall = ({
   videoContainer,
   width,
   height,
+  videoClassName,
+  nameClassName,
 }: {
   peer: Peer;
   videoContainer: React.RefObject<HTMLDivElement>;
   width?: number;
   height?: number;
+  videoClassName?: string;
+  nameClassName: string;
 }) => {
   peer.on('call', (call) => {
     navigator.mediaDevices
@@ -219,6 +251,8 @@ const listenIncomingCall = ({
             videoContainer,
             width,
             height,
+            videoClassName,
+            nameClassName,
           });
         });
       })
@@ -233,16 +267,29 @@ const listenRoomAnswer = ({
   conn,
   peer,
   roomId,
+  userId,
+  videoContainer,
+  videoContainerSelf,
+  width,
+  height,
+  videoClassName,
+  nameClassName,
 }: {
   conn: DataConnection;
   peer: Peer;
   roomId: string;
+  userId: string;
   videoContainer: React.RefObject<HTMLDivElement>;
+  videoContainerSelf: React.RefObject<HTMLDivElement>;
   width?: number;
   height?: number;
+  videoClassName?: string;
+  nameClassName: string;
 }) => {
   const id = conn.peer;
+  let difs: string[];
   conn.on('data', (data) => {
+    const { value } = data as { value: string[] };
     switch (data.type) {
       case 'connect':
         users.forEach((item) => {
@@ -260,7 +307,35 @@ const listenRoomAnswer = ({
         });
         break;
       case 'onconnect':
+        difs = value.filter((item) => users.filter((_item) => item === _item).length === 0);
         users = data.value;
+        users.forEach((item) => {
+          if (item !== roomId) {
+            sendMessage({
+              peer,
+              type: 'adduser',
+              value: difs,
+              id: item,
+            });
+          }
+        });
+        break;
+      case 'adduser':
+        value.forEach((item) => {
+          if (item !== userId && item !== roomId) {
+            loadSelfStreamAndCallToRoom({
+              videoContainer,
+              id: userId,
+              roomId: item,
+              peer,
+              videoContainerSelf,
+              width,
+              height,
+              videoClassName,
+              nameClassName,
+            });
+          }
+        });
         break;
       default:
         // eslint-disable-next-line no-console
@@ -279,6 +354,8 @@ export const loadRoom = ({
   videoContainerSelf,
   width,
   height,
+  videoClassName,
+  nameClassName,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
@@ -287,6 +364,8 @@ export const loadRoom = ({
   userId: string;
   width?: number;
   height?: number;
+  videoClassName?: string;
+  nameClassName: string;
 }) => {
   peer.on('open', (id) => {
     // Connect to room
@@ -298,7 +377,7 @@ export const loadRoom = ({
         type: 'connect',
       });
     }
-    listenIncomingCall({ peer, videoContainer, width, height });
+    listenIncomingCall({ peer, videoContainer, width, height, videoClassName, nameClassName });
     // Listen room connections
     peer.on('connection', (conn) => {
       const guestId = conn.peer;
@@ -319,9 +398,13 @@ export const loadRoom = ({
         conn,
         peer,
         roomId: userId,
+        userId,
+        videoContainerSelf,
         videoContainer,
         width,
         height,
+        videoClassName,
+        nameClassName,
       });
     });
     loadSelfStreamAndCallToRoom({
@@ -332,6 +415,8 @@ export const loadRoom = ({
       videoContainerSelf,
       width,
       height,
+      videoClassName,
+      nameClassName,
     });
   });
 };

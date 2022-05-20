@@ -32,6 +32,8 @@ function Router({ port, host, path }: RouterProps) {
       roomId: pathname,
       width: 400,
       height: 300,
+      videoClassName: s.video,
+      nameClassName: s.video__name,
     });
   }, [port, host, path, userId, pathname]);
 
@@ -46,14 +48,6 @@ function Router({ port, host, path }: RouterProps) {
       )}
       <div className={s.container} ref={videoContainer} />
       <div className={s.container} ref={videoContainerSelf} />
-      <button
-        type="button"
-        onClick={() => {
-          /** */
-        }}
-      >
-        Mute
-      </button>
     </div>
   );
 }
