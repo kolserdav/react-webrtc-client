@@ -1,12 +1,12 @@
+/* eslint-disable import/no-relative-packages */
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocation } from 'react-router-dom';
-// eslint-disable-next-line import/no-relative-packages
-import { Peer } from '../../../../peerjs/dist/bundler.mjs';
-import type { Peer as PeerI } from '../../../../peerjs/dist/types';
+import { Peer } from '../../../../peerjs';
+
 import s from './Router.module.scss';
 
-type PeerReducer = React.Reducer<PeerI | null, 'PEER'>;
+type PeerReducer = React.Reducer<Peer | null, 'PEER'>;
 
 interface RouterProps {
   port: number;
@@ -16,7 +16,7 @@ interface RouterProps {
 
 const userId: string = uuidv4();
 
-const getPeer = ({ path, port, host }: { path: string; port: number; host: string }): PeerI => {
+const getPeer = ({ path, port, host }: { path: string; port: number; host: string }): Peer => {
   const peer = new Peer(userId, {
     port,
     path,
@@ -31,7 +31,7 @@ function Router({ port, host, path }: RouterProps) {
   const pathname = location.pathname.replace(/^\//, '');
   const [reload, setReload] = useState<boolean>(false);
   const [users, setUsers] = useState<string[]>([]);
-  const [peer, setPeer] = useState<PeerI>();
+  const [peer, setPeer] = useState<Peer>();
 
   // const peer = useMemo(() => getPeer({ port, host, path }), [port, host, path]);
 
@@ -71,62 +71,6 @@ function Router({ port, host, path }: RouterProps) {
       }
     });
   };
-  /*
-  useEffect(() => {
-    if (peer?._lastServerId) {
-      const conn3 = peer.connect(pathname);
-      if (!conn3) {
-        setTimeout(() => {
-          setReload(!reload);
-        }, 500);
-      } else {
-        console.log(conn3, conn3);
-        conn3.on('open', () => {
-          conn3.send('hi!');
-        });
-        peer.on('connection', (conn) => {
-          console.log('connection');
-          conn.on('data', (data) => {
-            // Will print 'hi!'
-            console.log(22223);
-          });
-          conn.on('open', () => {
-            conn.send('hello!');
-          });
-        });
-      }
-    } else {
-      setTimeout(() => {
-        setReload(!reload);
-      }, 500);
-    }
-  }, [peer?._lastServerId, path, peer, reload]); */
-  /*
-  useEffect(() => {
-    if (peer) {
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          const call = peer.call(pathname, stream);
-          addVideoStream(document.createElement('video'), stream);
-          call.on('stream', (remoteStream) => {
-            addVideoStream(document.createElement('video'), remoteStream);
-          });
-        })
-        .catch((err) => {
-          console.error('Failed to get local stream', err);
-        });
-    }
-  }, [peer]);
-
-  useEffect(() => {
-    if (peer) {
-      peer.on('call', () => {
-        console.log(22222);
-      });
-    }
-  }, [peer]);
-*/
 
   const sendMessage = async ({
     peer: _peer,
@@ -134,7 +78,7 @@ function Router({ port, host, path }: RouterProps) {
     value,
     type,
   }: {
-    peer: PeerI;
+    peer: Peer;
     value: any;
     id: string;
     type: any;
@@ -240,12 +184,6 @@ function Router({ port, host, path }: RouterProps) {
       _peer.off('connection');
     };
   }, []);
-
-  useEffect(() => {
-    if (peer) {
-      // Listen connections
-    }
-  }, [peer]);
 
   const connectLink = `${window.location.origin}/${userId}`;
 
