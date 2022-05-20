@@ -38,8 +38,9 @@
   "scripts": {
     "start": "react-scripts start",
     "lint": "eslint -c .eslintrc src/package && stylelint --config .stylelintrc src/package",
-    "build": "npm run lint && node -e \"fs.rmSync('src/dist', { recursive: true, force: true })\" && microbundle --format es",
-    "dev": "concurrently \"microbundle --format es watch\" \"npm run start\"",
+    "prebuild": "cd peerjs && npm run build && cd ..",
+    "build": "npm run prebuild && npm run lint && node -e \"fs.rmSync('src/dist', { recursive: true, force: true })\" && microbundle --format es",
+    "dev": "concurrently \"cd peerjs && npm run watch\" \"microbundle --format es watch\"  \"npm run start\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "server": "cd peerjs-server && npm run dev"

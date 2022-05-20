@@ -1,14 +1,12 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Peer } from 'peerjs';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocation } from 'react-router-dom';
+// eslint-disable-next-line import/no-relative-packages
+import { Peer } from '../../../../peerjs/dist/bundler.mjs';
+import type { Peer as PeerI } from '../../../../peerjs/dist/types';
 import s from './Router.module.scss';
 
-interface FullPeer extends Peer {
-  _lastServerId?: string;
-}
-
-type PeerReducer = React.Reducer<FullPeer | null, 'PEER'>;
+type PeerReducer = React.Reducer<PeerI | null, 'PEER'>;
 
 interface RouterProps {
   port: number;
@@ -16,9 +14,9 @@ interface RouterProps {
   path: string | '/';
 }
 
-const userId = uuidv4();
+const userId: string = uuidv4();
 
-const getPeer = ({ path, port, host }: { path: string; port: number; host: string }): FullPeer => {
+const getPeer = ({ path, port, host }: { path: string; port: number; host: string }): PeerI => {
   const peer = new Peer(userId, {
     port,
     path,
@@ -33,7 +31,7 @@ function Router({ port, host, path }: RouterProps) {
   const pathname = location.pathname.replace(/^\//, '');
   const [reload, setReload] = useState<boolean>(false);
   const [users, setUsers] = useState<string[]>([]);
-  const [peer, setPeer] = useState<Peer>();
+  const [peer, setPeer] = useState<PeerI>();
 
   // const peer = useMemo(() => getPeer({ port, host, path }), [port, host, path]);
 
@@ -136,7 +134,7 @@ function Router({ port, host, path }: RouterProps) {
     value,
     type,
   }: {
-    peer: Peer;
+    peer: PeerI;
     value: any;
     id: string;
     type: any;
