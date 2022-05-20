@@ -1,7 +1,6 @@
 /* eslint-disable import/no-relative-packages */
 import type { DataConnection } from 'peerjs';
 import { Peer } from '../../../peerjs';
-import s from '../Main.module.scss';
 
 const users: string[] = [];
 
@@ -267,6 +266,7 @@ const listenRoomAnswer = ({
   conn,
   peer,
   roomId,
+  pathname,
   userId,
   videoContainer,
   videoContainerSelf,
@@ -278,6 +278,7 @@ const listenRoomAnswer = ({
   conn: DataConnection;
   peer: Peer;
   roomId: string;
+  pathname: string;
   userId: string;
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
@@ -287,32 +288,29 @@ const listenRoomAnswer = ({
   nameClassName: string;
 }) => {
   const id = conn.peer;
-  let difs: string[];
   conn.on('data', (data) => {
     const { value } = data as { value: string[] };
     switch (data.type) {
       case 'connect':
-        users.forEach((item) => {
-          sendMessage({
-            peer,
-            type: 'onconnect',
-            value: users.map((_item) => {
-              if (_item === id) {
-                return roomId;
-              }
-              return item;
-            }),
-            id: item,
+        if (!pathname) {
+          users.forEach((item) => {
+            sendMessage({
+              peer,
+              type: 'onconnect',
+              value: users.map((_item) => {
+                if (_item === id) {
+                  return roomId;
+                }
+                return item;
+              }),
+              id,
+            });
           });
-        });
+        }
         break;
       case 'onconnect':
-        // difs = value.filter((item) => users.filter((_item) => item === _item).length === 0);
-        console.log(value);
         value.forEach((item) => {
-          console.log(item, roomId);
           if (item !== roomId) {
-            console.log('call', userId, 'to', item);
             loadSelfStreamAndCallToRoom({
               videoContainer,
               id: userId,
@@ -328,13 +326,6 @@ const listenRoomAnswer = ({
           }
         });
         break;
-      case 'adduser':
-        value.forEach((item) => {
-          if (item !== userId && item !== roomId) {
-            /** */
-          }
-        });
-        break;
       default:
         // eslint-disable-next-line no-console
         console.warn('Unresolved peer message', data);
@@ -346,6 +337,7 @@ const listenRoomAnswer = ({
 
 export const loadRoom = ({
   peer,
+  roomId,
   pathname,
   userId,
   videoContainer,
@@ -358,6 +350,7 @@ export const loadRoom = ({
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   peer: Peer;
+  roomId: string;
   pathname: string;
   userId: string;
   width?: number;
@@ -367,10 +360,10 @@ export const loadRoom = ({
 }) => {
   peer.on('open', (id) => {
     // Connect to room
-    if (pathname) {
+    if (roomId) {
       sendMessage({
         peer,
-        id: pathname,
+        id: roomId,
         value: [userId],
         type: 'connect',
       });
@@ -379,10 +372,11 @@ export const loadRoom = ({
     // Listen room connections
     peer.on('connection', (conn) => {
       const guestId = conn.peer;
-      if (users.filter((item) => item === guestId).length === 0) {
-        users.push(guestId);
+      if (!roomId) {
+        if (users.filter((item) => item === guestId).length === 0) {
+          users.push(guestId);
+        }
       }
-      console.log('connec', users, userId, pathname, guestId);
       // Guest disconnectted
       conn.on('close', () => {
         removeDisconnected({
@@ -397,6 +391,7 @@ export const loadRoom = ({
         conn,
         peer,
         roomId: userId,
+        pathname,
         userId,
         videoContainerSelf,
         videoContainer,
@@ -409,7 +404,7 @@ export const loadRoom = ({
     loadSelfStreamAndCallToRoom({
       videoContainer,
       id: userId,
-      roomId: pathname || userId,
+      roomId,
       peer,
       videoContainerSelf,
       width,
