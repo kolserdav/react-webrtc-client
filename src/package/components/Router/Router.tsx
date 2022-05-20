@@ -2,9 +2,183 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocation } from 'react-router-dom';
+import type { DataConnection } from 'peerjs';
 import { Peer } from '../../../../peerjs';
 
 import s from './Router.module.scss';
+
+const removeDisconnected = ({
+  videoContainer,
+  userId,
+}: {
+  videoContainer: React.RefObject<HTMLDivElement>;
+  userId: string;
+}) => {
+  const { current } = videoContainer;
+  if (current) {
+    const { children } = current;
+    for (let i = 0; children[i]; i++) {
+      const child = children[i];
+      if (child.getAttribute('id') === userId) {
+        current.removeChild(child);
+      }
+    }
+  }
+};
+
+const listenIncomingCall = ({
+  peer,
+  videoContainer,
+}: {
+  peer: Peer;
+  videoContainer: React.RefObject<HTMLDivElement>;
+}) => {
+  peer.on('call', (call) => {
+    navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((stream) => {
+        call.answer(stream);
+        call.on('stream', (remoteStream) => {
+          addVideoStream({
+            stream: remoteStream,
+            id: call.peer,
+            videoContainer,
+          });
+        });
+      })
+      .catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('Failed to get local stream', err);
+      });
+  });
+};
+
+const sendMessage = async ({
+  peer,
+  id,
+  value,
+  type,
+}: {
+  peer: Peer;
+  value: string;
+  id: string;
+  type: 'connect' | 'onconnect';
+}): Promise<1 | 0> => {
+  const connection = peer.connect(id);
+  return new Promise((resolve) => {
+    connection.on('open', () => {
+      connection.send({ type, value });
+      resolve(0);
+    });
+  });
+};
+
+const listenRoomAnswer = ({
+  conn,
+  peer,
+  roomId,
+}: {
+  conn: DataConnection;
+  peer: Peer;
+  roomId: string;
+}) => {
+  const id = conn.peer;
+  conn.on('data', (data) => {
+    // Send answer to guest
+    if (data.type === 'connect') {
+      sendMessage({
+        peer,
+        type: 'onconnect',
+        value: roomId,
+        id,
+      });
+    }
+    // eslint-disable-next-line no-console
+    console.info('Event', data);
+  });
+};
+
+const addVideoStream = ({
+  stream,
+  id,
+  self,
+  videoContainer,
+}: {
+  stream: MediaStream;
+  id: string;
+  videoContainer: React.RefObject<HTMLDivElement>;
+  self?: boolean;
+}): void => {
+  const video = document.createElement('video');
+  const localStream = stream;
+  if (self) {
+    localStream.getAudioTracks()[0].enabled = false;
+  }
+  // eslint-disable-next-line no-param-reassign
+  video.srcObject = localStream;
+  video.setAttribute('id', id);
+  video.addEventListener('loadedmetadata', () => {
+    video.play();
+    if (self) {
+      video.setAttribute('style', 'margin: 1rem; box-shadow: 10px 5px 5px purple;');
+    } else {
+      video.setAttribute('style', 'margin: 1rem;');
+    }
+    const { current } = videoContainer;
+    let match = false;
+    if (current) {
+      const { children } = current;
+      for (let i = 0; children[i]; i++) {
+        const child = children[i];
+        if (child.getAttribute('id') === id) {
+          match = true;
+        }
+      }
+    }
+    if (!match) {
+      videoContainer.current?.append(video);
+    }
+  });
+};
+
+const loadSelfStreamAndCallToRoom = ({
+  videoContainer,
+  id,
+  pathname,
+  peer,
+}: {
+  videoContainer: React.RefObject<HTMLDivElement>;
+  id: string;
+  pathname: string;
+  peer: Peer;
+}) => {
+  // Load self stream
+  navigator.mediaDevices
+    .getUserMedia({ video: true, audio: true })
+    .then((stream) => {
+      addVideoStream({
+        stream,
+        id,
+        self: true,
+        videoContainer,
+      });
+      // If guest that call to room
+      if (pathname) {
+        const call = peer.call(pathname, stream);
+        call.on('stream', (remoteStream) => {
+          addVideoStream({
+            stream: remoteStream,
+            id: pathname,
+            videoContainer,
+          });
+        });
+      }
+    })
+    .catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error('Failed to get local stream', err);
+    });
+};
 
 interface RouterProps {
   port: number;
@@ -31,180 +205,87 @@ const getPeer = ({
   return peer;
 };
 
+const loadRoom = ({
+  peer,
+  pathname,
+  userId,
+  videoContainer,
+}: {
+  videoContainer: React.RefObject<HTMLDivElement>;
+  peer: Peer;
+  pathname: string;
+  userId: string;
+}) => {
+  peer.on('open', (id) => {
+    // Connect to room
+    if (pathname) {
+      sendMessage({
+        peer,
+        id: pathname,
+        value: userId,
+        type: 'connect',
+      });
+    }
+    listenIncomingCall({ peer, videoContainer });
+    peer.on('connection', (conn) => {
+      // Other user disconnectted
+      conn.on('close', () => {
+        const disconnectUserId = conn.peer;
+        removeDisconnected({
+          videoContainer,
+          userId: disconnectUserId,
+        });
+        // eslint-disable-next-line no-console
+        console.info('Event', { type: 'disconnect', value: disconnectUserId });
+      });
+      listenRoomAnswer({
+        conn,
+        peer,
+        roomId: userId,
+      });
+    });
+    loadSelfStreamAndCallToRoom({ videoContainer, id: userId, pathname, peer });
+  });
+};
+
 function Router({ port, host, path }: RouterProps) {
-  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const videoContainer = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const pathname = location.pathname.replace(/^\//, '');
-  const [users, setUsers] = useState<string[]>([]);
-  const [peer, setPeer] = useState<Peer>();
 
   const userId = useMemo(() => uuidv4(), []);
 
-  const addVideoStream = ({
-    stream,
-    id,
-    self,
-  }: {
-    stream: MediaProvider;
-    id: string;
-    self?: boolean;
-  }) => {
-    const video = document.createElement('video');
-    // eslint-disable-next-line no-param-reassign
-    video.srcObject = stream;
-    video.setAttribute('id', id);
-    video.addEventListener('loadedmetadata', () => {
-      video.play();
-      if (self) {
-        video.setAttribute('style', 'margin: 1rem; box-shadow: 10px 5px 5px purple;');
-      } else {
-        video.setAttribute('style', 'margin: 1rem;');
-      }
-      const { current } = videoContainerRef;
-      let match = false;
-      if (current) {
-        const { children } = current;
-        for (let i = 0; children[i]; i++) {
-          const child = children[i];
-          if (child.getAttribute('id') === id) {
-            match = true;
-          }
-        }
-      }
-      if (!match) {
-        videoContainerRef.current?.append(video);
-      }
-    });
-  };
-
-  const sendMessage = async ({
-    peer: _peer,
-    id,
-    value,
-    type,
-  }: {
-    peer: Peer;
-    value: any;
-    id: string;
-    type: any;
-  }): Promise<1 | 0> => {
-    const connection = _peer.connect(id);
-    return new Promise((resolve) => {
-      connection.on('open', () => {
-        connection.send({ type, value });
-        resolve(0);
-      });
-    });
-  };
-
+  /**
+   * Create room
+   */
   useEffect(() => {
-    const _peer = getPeer({ port, host, path, id: userId });
-    setPeer(_peer);
-    _peer.on('open', (id) => {
-      if (pathname) {
-        sendMessage({
-          peer: _peer,
-          id: pathname,
-          value: userId,
-          type: 'connect',
-        });
-      }
-      _peer.on('call', (call) => {
-        navigator.mediaDevices
-          .getUserMedia({ video: true, audio: true })
-          .then((stream) => {
-            call.answer(stream);
-            call.on('stream', (remoteStream) => {
-              addVideoStream({
-                stream: remoteStream,
-                id: call.peer,
-              });
-            });
-          })
-          .catch((err) => {
-            console.error('Failed to get local stream', err);
-          });
-      });
-      _peer.on('connection', (conn) => {
-        const connectUserId = conn.peer;
-        if (users.indexOf(connectUserId) === -1) {
-          const _users = users.map((item) => item);
-          _users.push(connectUserId);
-          setUsers(_users);
-        }
-        // Other user disconnectted
-        conn.on('close', () => {
-          const _users = users.filter((item) => item !== connectUserId);
-          setUsers(_users);
-          const { current } = videoContainerRef;
-          if (current) {
-            const { children } = current;
-            for (let i = 0; children[i]; i++) {
-              const child = children[i];
-              if (child.getAttribute('id') === connectUserId) {
-                current.removeChild(child);
-              }
-            }
-          }
-        });
-        // Listen messages
-        conn.on('data', (data) => {
-          if (data.type === 'connect') {
-            sendMessage({
-              peer: _peer,
-              type: 'onconnect',
-              value: userId,
-              id: connectUserId,
-            });
-          }
-          // eslint-disable-next-line no-console
-          console.info('Event', data);
-        });
-      });
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          // Self video
-          addVideoStream({
-            stream,
-            id: userId,
-            self: true,
-          });
-          if (pathname) {
-            const call = _peer.call(pathname, stream);
-            call.on('stream', (remoteStream) => {
-              addVideoStream({
-                stream: remoteStream,
-                id: pathname,
-              });
-            });
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to get local stream', err);
-        });
+    const peer = getPeer({ port, host, path, id: userId });
+    loadRoom({
+      peer,
+      userId,
+      videoContainer,
+      pathname,
     });
-    return () => {
-      _peer.off('call');
-      _peer.off('connection');
-    };
   }, []);
 
   const connectLink = `${window.location.origin}/${userId}`;
 
   return (
     <div className={s.wrapper}>
-      <div className={s.container} ref={videoContainerRef} />
-      <div className={s.users}>
-        {users.map((item) => (
-          <p key={item}>{item}</p>
-        ))}
-      </div>
+      <div className={s.container} ref={videoContainer} />
       {!pathname && (
         <a target="_blank" href={connectLink} rel="noreferrer">
           {connectLink}
         </a>
       )}
+      <button
+        type="button"
+        onClick={() => {
+          /** */
+        }}
+      >
+        Mute
+      </button>
     </div>
   );
 }
