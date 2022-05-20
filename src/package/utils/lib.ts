@@ -2,7 +2,7 @@
 import type { DataConnection } from 'peerjs';
 import { Peer } from '../../../peerjs';
 
-let users: string[] = [];
+const users: string[] = [];
 
 const removeDisconnected = ({
   videoContainer,
@@ -79,11 +79,10 @@ const listenRoomAnswer = ({
         });
         break;
       case 'onconnect':
-        users = data.value;
         loadSelfStreamAndCallToRoom({
           videoContainer,
           id,
-          roomId,
+          pathname: roomId,
           peer,
           videoContainerSelf,
           width,
@@ -148,9 +147,7 @@ const addVideoStream = ({
       }
     }
     if (!match) {
-      setTimeout(() => {
-        videoContainer.current?.append(video);
-      }, 0);
+      videoContainer.current?.append(video);
     }
   });
 };
@@ -159,7 +156,7 @@ const loadSelfStreamAndCallToRoom = ({
   videoContainer,
   videoContainerSelf,
   id,
-  roomId,
+  pathname,
   peer,
   width,
   height,
@@ -168,7 +165,7 @@ const loadSelfStreamAndCallToRoom = ({
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   id: string;
-  roomId: string;
+  pathname: string;
   peer: Peer;
   width?: number;
   height?: number;
@@ -178,13 +175,6 @@ const loadSelfStreamAndCallToRoom = ({
   navigator.mediaDevices
     .getUserMedia({ video: true, audio: true })
     .then((stream) => {
-      const { current } = videoContainer;
-      if (current) {
-        for (let i = 0; current.children[i]; i++) {
-          const child = current.children[i];
-          current.removeChild(child);
-        }
-      }
       if (!restart) {
         addVideoStream({
           stream,
@@ -196,7 +186,11 @@ const loadSelfStreamAndCallToRoom = ({
         });
       }
       // If guest that call to room
-      if (roomId) {
+      if (pathname) {
+        const { current } = videoContainer;
+        if (current) {
+          current.innerHTML = '';
+        }
         users.forEach((item) => {
           const call = peer.call(item, stream);
           call.on('stream', (remoteStream) => {
@@ -271,7 +265,7 @@ const listenIncomingCall = ({
 
 export const loadRoom = ({
   peer,
-  roomId,
+  pathname,
   userId,
   videoContainer,
   videoContainerSelf,
@@ -281,17 +275,17 @@ export const loadRoom = ({
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   peer: Peer;
-  roomId: string;
+  pathname: string;
   userId: string;
   width?: number;
   height?: number;
 }) => {
   peer.on('open', (id) => {
     // Connect to room
-    if (roomId) {
+    if (pathname) {
       sendMessage({
         peer,
-        id: roomId,
+        id: pathname,
         value: [userId],
         type: 'connect',
       });
@@ -326,7 +320,7 @@ export const loadRoom = ({
     loadSelfStreamAndCallToRoom({
       videoContainer,
       id: userId,
-      roomId,
+      pathname,
       peer,
       videoContainerSelf,
       width,
