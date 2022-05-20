@@ -29,7 +29,7 @@ function Router({ port, host, path }: RouterProps) {
       userId,
       videoContainer,
       videoContainerSelf,
-      pathname,
+      roomId: pathname,
       width: 400,
       height: 300,
     });

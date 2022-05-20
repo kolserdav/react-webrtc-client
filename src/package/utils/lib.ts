@@ -82,7 +82,7 @@ const listenRoomAnswer = ({
         loadSelfStreamAndCallToRoom({
           videoContainer,
           id,
-          pathname: roomId,
+          roomId,
           peer,
           videoContainerSelf,
           width,
@@ -156,7 +156,7 @@ const loadSelfStreamAndCallToRoom = ({
   videoContainer,
   videoContainerSelf,
   id,
-  pathname,
+  roomId,
   peer,
   width,
   height,
@@ -165,7 +165,7 @@ const loadSelfStreamAndCallToRoom = ({
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   id: string;
-  pathname: string;
+  roomId: string;
   peer: Peer;
   width?: number;
   height?: number;
@@ -186,7 +186,7 @@ const loadSelfStreamAndCallToRoom = ({
         });
       }
       // If guest that call to room
-      if (pathname) {
+      if (roomId) {
         const { current } = videoContainer;
         if (current) {
           current.innerHTML = '';
@@ -265,7 +265,7 @@ const listenIncomingCall = ({
 
 export const loadRoom = ({
   peer,
-  pathname,
+  roomId,
   userId,
   videoContainer,
   videoContainerSelf,
@@ -275,17 +275,17 @@ export const loadRoom = ({
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   peer: Peer;
-  pathname: string;
+  roomId: string;
   userId: string;
   width?: number;
   height?: number;
 }) => {
   peer.on('open', (id) => {
     // Connect to room
-    if (pathname) {
+    if (roomId) {
       sendMessage({
         peer,
-        id: pathname,
+        id: roomId,
         value: [userId],
         type: 'connect',
       });
@@ -320,7 +320,7 @@ export const loadRoom = ({
     loadSelfStreamAndCallToRoom({
       videoContainer,
       id: userId,
-      pathname,
+      roomId,
       peer,
       videoContainerSelf,
       width,
