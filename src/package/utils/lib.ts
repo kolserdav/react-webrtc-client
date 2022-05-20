@@ -2,7 +2,7 @@
 import type { DataConnection } from 'peerjs';
 import { Peer } from '../../../peerjs';
 
-const users: string[] = [];
+let users: string[] = [];
 
 const removeDisconnected = ({
   videoContainer,
@@ -47,16 +47,11 @@ const listenRoomAnswer = ({
   conn,
   peer,
   roomId,
-  videoContainer,
-  videoContainerSelf,
-  width,
-  height,
 }: {
   conn: DataConnection;
   peer: Peer;
   roomId: string;
   videoContainer: React.RefObject<HTMLDivElement>;
-  videoContainerSelf: React.RefObject<HTMLDivElement>;
   width?: number;
   height?: number;
 }) => {
@@ -79,16 +74,7 @@ const listenRoomAnswer = ({
         });
         break;
       case 'onconnect':
-        loadSelfStreamAndCallToRoom({
-          videoContainer,
-          id,
-          roomId,
-          peer,
-          videoContainerSelf,
-          width,
-          height,
-          restart: true,
-        });
+        users = data.value;
         break;
       default:
         // eslint-disable-next-line no-console
@@ -333,7 +319,6 @@ export const loadRoom = ({
         conn,
         peer,
         roomId: userId,
-        videoContainerSelf,
         videoContainer,
         width,
         height,
