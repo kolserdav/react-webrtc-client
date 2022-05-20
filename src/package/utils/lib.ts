@@ -43,48 +43,6 @@ const sendMessage = async ({
   });
 };
 
-const listenRoomAnswer = ({
-  conn,
-  peer,
-  roomId,
-}: {
-  conn: DataConnection;
-  peer: Peer;
-  roomId: string;
-  videoContainer: React.RefObject<HTMLDivElement>;
-  width?: number;
-  height?: number;
-}) => {
-  const id = conn.peer;
-  conn.on('data', (data) => {
-    switch (data.type) {
-      case 'connect':
-        users.forEach((item) => {
-          sendMessage({
-            peer,
-            type: 'onconnect',
-            value: users.map((_item) => {
-              if (_item === id) {
-                return roomId;
-              }
-              return item;
-            }),
-            id: item,
-          });
-        });
-        break;
-      case 'onconnect':
-        users = data.value;
-        break;
-      default:
-        // eslint-disable-next-line no-console
-        console.warn('Unresolved peer message', data);
-    }
-    // eslint-disable-next-line no-console
-    console.info('Event', data);
-  });
-};
-
 const addVideoStream = ({
   stream,
   id,
@@ -268,6 +226,48 @@ const listenIncomingCall = ({
         // eslint-disable-next-line no-console
         console.error('Failed to get local stream', err);
       });
+  });
+};
+
+const listenRoomAnswer = ({
+  conn,
+  peer,
+  roomId,
+}: {
+  conn: DataConnection;
+  peer: Peer;
+  roomId: string;
+  videoContainer: React.RefObject<HTMLDivElement>;
+  width?: number;
+  height?: number;
+}) => {
+  const id = conn.peer;
+  conn.on('data', (data) => {
+    switch (data.type) {
+      case 'connect':
+        users.forEach((item) => {
+          sendMessage({
+            peer,
+            type: 'onconnect',
+            value: users.map((_item) => {
+              if (_item === id) {
+                return roomId;
+              }
+              return item;
+            }),
+            id: item,
+          });
+        });
+        break;
+      case 'onconnect':
+        users = data.value;
+        break;
+      default:
+        // eslint-disable-next-line no-console
+        console.warn('Unresolved peer message', data);
+    }
+    // eslint-disable-next-line no-console
+    console.info('Event', data);
   });
 };
 
