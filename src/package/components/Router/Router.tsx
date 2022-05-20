@@ -32,15 +32,45 @@ function Router({ port, host, path }: RouterProps) {
   const location = useLocation();
   const pathname = location.pathname.replace(/^\//, '');
   const [reload, setReload] = useState<boolean>(false);
+  const [users, setUsers] = useState<string[]>([]);
+  const [peer, setPeer] = useState<Peer>();
 
   // const peer = useMemo(() => getPeer({ port, host, path }), [port, host, path]);
 
-  const addVideoStream = (video: HTMLVideoElement, stream: MediaProvider) => {
+  const addVideoStream = ({
+    stream,
+    id,
+    self,
+  }: {
+    stream: MediaProvider;
+    id: string;
+    self?: boolean;
+  }) => {
+    const video = document.createElement('video');
     // eslint-disable-next-line no-param-reassign
     video.srcObject = stream;
+    video.setAttribute('id', id);
     video.addEventListener('loadedmetadata', () => {
       video.play();
-      videoContainerRef.current?.append(video);
+      if (self) {
+        video.setAttribute('style', 'margin: 1rem; box-shadow: 10px 5px 5px purple;');
+      } else {
+        video.setAttribute('style', 'margin: 1rem;');
+      }
+      const { current } = videoContainerRef;
+      let match = false;
+      if (current) {
+        const { children } = current;
+        for (let i = 0; children[i]; i++) {
+          const child = children[i];
+          if (child.getAttribute('id') === id) {
+            match = true;
+          }
+        }
+      }
+      if (!match) {
+        videoContainerRef.current?.append(video);
+      }
     });
   };
   /*
@@ -101,7 +131,7 @@ function Router({ port, host, path }: RouterProps) {
 */
 
   const sendMessage = async ({
-    peer,
+    peer: _peer,
     id,
     value,
     type,
@@ -110,8 +140,8 @@ function Router({ port, host, path }: RouterProps) {
     value: any;
     id: string;
     type: any;
-  }) => {
-    const connection = peer.connect(id);
+  }): Promise<1 | 0> => {
+    const connection = _peer.connect(id);
     return new Promise((resolve) => {
       connection.on('open', () => {
         connection.send({ type, value });
@@ -121,49 +151,119 @@ function Router({ port, host, path }: RouterProps) {
   };
 
   useEffect(() => {
-    const peer = getPeer({ port, host, path });
-    peer.on('open', (id) => {
-      console.log(id);
+    const _peer = getPeer({ port, host, path });
+    setPeer(_peer);
+    _peer.on('open', (id) => {
       if (pathname) {
         sendMessage({
-          peer,
+          peer: _peer,
           id: pathname,
           value: userId,
           type: 'connect',
         });
       }
-      peer.on('call', () => {
-        console.log(22222);
-      });
-    });
-    // Listen connections
-    peer.on('connection', (conn) => {
-      const connectUserId = conn.peer;
-      // Listen messages
-      conn.on('data', (data) => {
-        if (data.type === 'connect') {
-          sendMessage({
-            peer,
-            type: 'onconnect',
-            value: userId,
-            id: connectUserId,
+      _peer.on('call', (call) => {
+        navigator.mediaDevices
+          .getUserMedia({ video: true, audio: true })
+          .then((stream) => {
+            call.answer(stream);
+            call.on('stream', (remoteStream) => {
+              addVideoStream({
+                stream: remoteStream,
+                id: call.peer,
+              });
+            });
+          })
+          .catch((err) => {
+            console.error('Failed to get local stream', err);
           });
+      });
+      _peer.on('connection', (conn) => {
+        const connectUserId = conn.peer;
+        if (users.indexOf(connectUserId) === -1) {
+          const _users = users.map((item) => item);
+          _users.push(connectUserId);
+          setUsers(_users);
         }
-        // eslint-disable-next-line no-console
-        console.info('Event', data);
+        // Other user disconnectted
+        conn.on('close', () => {
+          const _users = users.filter((item) => item !== connectUserId);
+          setUsers(_users);
+          const { current } = videoContainerRef;
+          if (current) {
+            const { children } = current;
+            for (let i = 0; children[i]; i++) {
+              const child = children[i];
+              if (child.getAttribute('id') === connectUserId) {
+                current.removeChild(child);
+              }
+            }
+          }
+        });
+        // Listen messages
+        conn.on('data', (data) => {
+          if (data.type === 'connect') {
+            sendMessage({
+              peer: _peer,
+              type: 'onconnect',
+              value: userId,
+              id: connectUserId,
+            });
+          }
+          // eslint-disable-next-line no-console
+          console.info('Event', data);
+        });
       });
-      conn.on('open', () => {
-        conn.send('hello!');
-      });
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          // Self video
+          addVideoStream({
+            stream,
+            id: userId,
+            self: true,
+          });
+          if (pathname) {
+            const call = _peer.call(pathname, stream);
+            call.on('stream', (remoteStream) => {
+              addVideoStream({
+                stream: remoteStream,
+                id: pathname,
+              });
+            });
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to get local stream', err);
+        });
     });
-    peer.on('disconnected', (conn) => {
-      console.log(conn, 'disconn');
-    });
+    return () => {
+      _peer.off('call');
+      _peer.off('connection');
+    };
   }, []);
+
+  useEffect(() => {
+    if (peer) {
+      // Listen connections
+    }
+  }, [peer]);
+
+  const connectLink = `${window.location.origin}/${userId}`;
 
   return (
     <div className={s.wrapper}>
       <div className={s.container} ref={videoContainerRef} />
+      <div className={s.users}>
+        {users.map((item) => (
+          <p key={item}>{item}</p>
+        ))}
+      </div>
+      {!pathname && (
+        <a target="_blank" href={connectLink} rel="noreferrer">
+          {connectLink}
+        </a>
+      )}
     </div>
   );
 }
