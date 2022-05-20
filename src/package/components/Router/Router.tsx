@@ -6,18 +6,24 @@ import { Peer } from '../../../../peerjs';
 
 import s from './Router.module.scss';
 
-type PeerReducer = React.Reducer<Peer | null, 'PEER'>;
-
 interface RouterProps {
   port: number;
   host: string | 'localhost' | '127.0.0.1';
   path: string | '/';
 }
 
-const userId: string = uuidv4();
-
-const getPeer = ({ path, port, host }: { path: string; port: number; host: string }): Peer => {
-  const peer = new Peer(userId, {
+const getPeer = ({
+  path,
+  port,
+  host,
+  id,
+}: {
+  id: string;
+  path: string;
+  port: number;
+  host: string;
+}): Peer => {
+  const peer = new Peer(id, {
     port,
     path,
     host,
@@ -29,11 +35,10 @@ function Router({ port, host, path }: RouterProps) {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const pathname = location.pathname.replace(/^\//, '');
-  const [reload, setReload] = useState<boolean>(false);
   const [users, setUsers] = useState<string[]>([]);
   const [peer, setPeer] = useState<Peer>();
 
-  // const peer = useMemo(() => getPeer({ port, host, path }), [port, host, path]);
+  const userId = useMemo(() => uuidv4(), []);
 
   const addVideoStream = ({
     stream,
@@ -93,7 +98,7 @@ function Router({ port, host, path }: RouterProps) {
   };
 
   useEffect(() => {
-    const _peer = getPeer({ port, host, path });
+    const _peer = getPeer({ port, host, path, id: userId });
     setPeer(_peer);
     _peer.on('open', (id) => {
       if (pathname) {
