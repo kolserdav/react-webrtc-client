@@ -13,15 +13,15 @@
 
 .video {
   display: flex;
-  flex-flow: column nowrap;
+  flex-flow: column-reverse nowrap;
   align-items: center;
   justify-content: center;
-  background-color: rgba($color: cyan, $alpha: 15%);
+  background-color: rgba($color: gray, $alpha: 5%);
   margin: 1rem;
-  padding: 2rem;
+  padding: 1rem;
   border-radius: 5px;
 }
 
 .video__name {
-  color: red;
+  color: gray;
 }

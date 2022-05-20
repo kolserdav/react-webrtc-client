@@ -3,7 +3,7 @@ import type { DataConnection } from 'peerjs';
 import { Peer } from '../../../peerjs';
 import s from '../Main.module.scss';
 
-let users: string[] = [];
+const users: string[] = [];
 
 const removeDisconnected = ({
   videoContainer,
@@ -307,22 +307,12 @@ const listenRoomAnswer = ({
         });
         break;
       case 'onconnect':
-        difs = value.filter((item) => users.filter((_item) => item === _item).length === 0);
-        users = data.value;
-        users.forEach((item) => {
-          if (item !== roomId) {
-            sendMessage({
-              peer,
-              type: 'adduser',
-              value: difs,
-              id: item,
-            });
-          }
-        });
-        break;
-      case 'adduser':
+        // difs = value.filter((item) => users.filter((_item) => item === _item).length === 0);
+        console.log(value);
         value.forEach((item) => {
-          if (item !== userId && item !== roomId) {
+          console.log(item, roomId);
+          if (item !== roomId) {
+            console.log('call', userId, 'to', item);
             loadSelfStreamAndCallToRoom({
               videoContainer,
               id: userId,
@@ -333,7 +323,15 @@ const listenRoomAnswer = ({
               height,
               videoClassName,
               nameClassName,
+              restart: true,
             });
+          }
+        });
+        break;
+      case 'adduser':
+        value.forEach((item) => {
+          if (item !== userId && item !== roomId) {
+            /** */
           }
         });
         break;
@@ -348,7 +346,7 @@ const listenRoomAnswer = ({
 
 export const loadRoom = ({
   peer,
-  roomId,
+  pathname,
   userId,
   videoContainer,
   videoContainerSelf,
@@ -360,7 +358,7 @@ export const loadRoom = ({
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   peer: Peer;
-  roomId: string;
+  pathname: string;
   userId: string;
   width?: number;
   height?: number;
@@ -369,10 +367,10 @@ export const loadRoom = ({
 }) => {
   peer.on('open', (id) => {
     // Connect to room
-    if (roomId) {
+    if (pathname) {
       sendMessage({
         peer,
-        id: roomId,
+        id: pathname,
         value: [userId],
         type: 'connect',
       });
@@ -384,6 +382,7 @@ export const loadRoom = ({
       if (users.filter((item) => item === guestId).length === 0) {
         users.push(guestId);
       }
+      console.log('connec', users, userId, pathname, guestId);
       // Guest disconnectted
       conn.on('close', () => {
         removeDisconnected({
@@ -410,7 +409,7 @@ export const loadRoom = ({
     loadSelfStreamAndCallToRoom({
       videoContainer,
       id: userId,
-      roomId,
+      roomId: pathname || userId,
       peer,
       videoContainerSelf,
       width,
