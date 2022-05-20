@@ -152,6 +152,38 @@ const addVideoStream = ({
   });
 };
 
+const callToRoom = ({
+  stream,
+  videoContainer,
+  id,
+  roomId,
+  peer,
+  width,
+  height,
+}: {
+  stream: MediaStream;
+  videoContainer: React.RefObject<HTMLDivElement>;
+  id: string;
+  roomId: string;
+  peer: Peer;
+  width?: number;
+  height?: number;
+}) => {
+  // If guest that call to room
+  if (roomId) {
+    const call = peer.call(roomId, stream);
+    call.on('stream', (remoteStream) => {
+      addVideoStream({
+        stream: remoteStream,
+        id,
+        videoContainer,
+        width,
+        height,
+      });
+    });
+  }
+};
+
 const loadSelfStreamAndCallToRoom = ({
   videoContainer,
   videoContainerSelf,
@@ -185,25 +217,15 @@ const loadSelfStreamAndCallToRoom = ({
           height,
         });
       }
-      // If guest that call to room
-      if (roomId) {
-        const { current } = videoContainer;
-        if (current) {
-          current.innerHTML = '';
-        }
-        users.forEach((item) => {
-          const call = peer.call(item, stream);
-          call.on('stream', (remoteStream) => {
-            addVideoStream({
-              stream: remoteStream,
-              id: item,
-              videoContainer,
-              width,
-              height,
-            });
-          });
-        });
-      }
+      callToRoom({
+        stream,
+        videoContainer,
+        peer,
+        id,
+        width,
+        roomId,
+        height,
+      });
     })
     .catch((err) => {
       // eslint-disable-next-line no-console
