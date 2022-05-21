@@ -114,7 +114,6 @@ const addVideoStream = ({
 const callToRoom = ({
   stream,
   videoContainer,
-  id,
   roomId,
   peer,
   width,
@@ -124,7 +123,6 @@ const callToRoom = ({
 }: {
   stream: MediaStream;
   videoContainer: React.RefObject<HTMLDivElement>;
-  id: string;
   roomId: string;
   peer: Peer;
   width?: number;
@@ -192,7 +190,6 @@ const loadSelfStreamAndCallToRoom = ({
         stream,
         videoContainer,
         peer,
-        id,
         width,
         roomId,
         height,
@@ -223,45 +220,6 @@ export const getPeer = ({
     host,
   });
   return peer;
-};
-
-const listenIncomingCall = ({
-  peer,
-  videoContainer,
-  width,
-  height,
-  videoClassName,
-  nameClassName,
-}: {
-  peer: Peer;
-  videoContainer: React.RefObject<HTMLDivElement>;
-  width?: number;
-  height?: number;
-  videoClassName?: string;
-  nameClassName: string;
-}) => {
-  peer.on('call', (call) => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        call.answer(stream);
-        call.on('stream', (remoteStream) => {
-          addVideoStream({
-            stream: remoteStream,
-            id: call.peer,
-            videoContainer,
-            width,
-            height,
-            videoClassName,
-            nameClassName,
-          });
-        });
-      })
-      .catch((err) => {
-        // eslint-disable-next-line no-console
-        console.error('Failed to get local stream', err);
-      });
-  });
 };
 
 const listenRoomAnswer = ({
@@ -377,7 +335,29 @@ export const loadRoom = ({
         type: 'connect',
       });
     }
-    listenIncomingCall({ peer, videoContainer, width, height, videoClassName, nameClassName });
+    // Listen incoming call
+    peer.on('call', (call) => {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          call.answer(stream);
+          call.on('stream', (remoteStream) => {
+            addVideoStream({
+              stream: remoteStream,
+              id: call.peer,
+              videoContainer,
+              width,
+              height,
+              videoClassName,
+              nameClassName,
+            });
+          });
+        })
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error('Failed to get local stream', err);
+        });
+    });
     // Listen room connections
     peer.on('connection', (conn) => {
       const guestId = conn.peer;

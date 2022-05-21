@@ -11,6 +11,12 @@ interface RouterProps {
   path: string | '/';
 }
 
+/**
+ * TODO
+ * controls
+ * admin
+ */
+
 function Router({ port, host, path }: RouterProps) {
   const videoContainer = useRef<HTMLDivElement>(null);
   const videoContainerSelf = useRef<HTMLDivElement>(null);

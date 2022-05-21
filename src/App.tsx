@@ -7,7 +7,7 @@ import './App.scss';
 
 function App() {
   return (
-    <div placeholder="test" className="app">
+    <div className="app">
       <Main />
     </div>
   );
