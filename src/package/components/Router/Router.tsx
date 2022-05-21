@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocation } from 'react-router-dom';
-import { getPeer, loadRoom } from '../../utils';
+import { getPeer, loadRoom, getSupports } from '../../utils';
 
 import s from './Router.module.scss';
 
@@ -29,7 +29,24 @@ function Router({ port, host, path }: RouterProps) {
    * Create room
    */
   useEffect(() => {
-    const peer = getPeer({ port, host, path, id: userId });
+    // Check supports
+    const supports = getSupports();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const keys: (keyof typeof supports)[] = Object.keys(supports) as any[];
+    if (keys.filter((item) => !supports[item]).length) {
+      // eslint-disable-next-line no-alert
+      alert(`Not supported browser ${JSON.stringify(supports)}`);
+      return;
+    }
+    // Once get peer instance
+    const peer = getPeer({
+      port,
+      host,
+      path,
+      id: userId,
+      debug: process.env.NODE_ENV === 'production' ? 0 : 2,
+    });
+    // Starting room after page load
     loadRoom({
       peer,
       userId,

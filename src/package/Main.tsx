@@ -13,7 +13,7 @@ interface MainProps {
 function Main({ test }: MainProps) {
   return (
     <BrowserRouter>
-      <Router port={9000} host="192.168.0.3" path="/" />
+      <Router port={9000} host="localhost" path="/" />
     </BrowserRouter>
   );
 }
