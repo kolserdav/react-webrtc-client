@@ -42,9 +42,7 @@ function Router({
   useEffect(() => {
     // Check supports
     const supports = getSupports();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const keys: (keyof typeof supports)[] = Object.keys(supports) as any[];
-    if (keys.filter((item) => !supports[item]).length) {
+    if (!supports.webRTC) {
       // eslint-disable-next-line no-alert
       alert(`Not supported browser ${JSON.stringify(supports)}`);
       return;
