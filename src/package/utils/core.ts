@@ -19,18 +19,21 @@ export const getPeer = ({
   host,
   id,
   debug,
+  secure,
 }: {
   id: string;
   path: string;
   port: number;
   host: string;
   debug?: 0 | 1 | 2 | 3;
+  secure?: boolean;
 }): Peer => {
   const peer = new Peer(id, {
     port,
     path,
     host,
     debug,
+    secure,
   });
   return peer;
 };

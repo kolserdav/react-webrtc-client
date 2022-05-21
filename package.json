@@ -37,6 +37,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
+    "deploy": "npm run build && react-scripts build",
     "lint": "eslint -c .eslintrc src/package && stylelint --config .stylelintrc src/package",
     "prebuild": "cd peerjs && npm run build && cd ..",
     "build": "npm run prebuild && npm run lint && node -e \"fs.rmSync('src/dist', { recursive: true, force: true })\" && microbundle --format es",

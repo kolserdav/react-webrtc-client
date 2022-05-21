@@ -13,7 +13,7 @@ interface MainProps {
 function Main({ test }: MainProps) {
   return (
     <BrowserRouter>
-      <Router port={9000} host="localhost" path="/" />
+      <Router port={443} host="stun.uyem.ru" path="/" secure />
     </BrowserRouter>
   );
 }

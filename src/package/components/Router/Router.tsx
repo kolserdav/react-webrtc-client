@@ -9,6 +9,7 @@ interface RouterProps {
   port: number;
   host: string | 'localhost' | '127.0.0.1';
   path: string | '/';
+  secure?: boolean;
 }
 
 /**
@@ -17,7 +18,17 @@ interface RouterProps {
  * admin
  */
 
-function Router({ port, host, path }: RouterProps) {
+function Router({
+  port,
+  host,
+  path,
+  secure,
+}: {
+  port: number;
+  host: string | 'localhost' | '127.0.0.1';
+  path: string | '/';
+  secure?: boolean;
+}) {
   const videoContainer = useRef<HTMLDivElement>(null);
   const videoContainerSelf = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -44,7 +55,8 @@ function Router({ port, host, path }: RouterProps) {
       host,
       path,
       id: userId,
-      debug: process.env.NODE_ENV === 'production' ? 0 : 2,
+      debug: process.env.NODE_ENV === 'production' ? 0 : 3,
+      secure,
     });
     // Starting room after page load
     loadRoom({
@@ -75,5 +87,9 @@ function Router({ port, host, path }: RouterProps) {
     </div>
   );
 }
+
+Router.defaultProps = {
+  secure: false,
+};
 
 export default Router;
