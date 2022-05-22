@@ -92,6 +92,7 @@ export const loadRoom = ({
         })
         .catch((err) => {
           Console.error('Failed to get local stream', err);
+          alert(`Error 95 ${JSON.stringify(err)}`);
         });
     });
     // Listen room connections
