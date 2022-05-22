@@ -35,6 +35,7 @@ function Router({
   useEffect(() => {
     // Check supports
     const supports = getSupports();
+    console.log(supports);
     if (!supports.webRTC) {
       // eslint-disable-next-line no-alert
       alert(`Not supported browser ${JSON.stringify(supports)}`);
