@@ -4,11 +4,23 @@
   flex-flow: column;
 }
 
+.room__link {
+  margin: 0.5rem;
+}
+
 .container {
+  position: relative;
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.container__item {
   position: relative;
   display: flex;
   width: auto;
   flex-flow: row wrap;
+  justify-content: center;
+  align-items: center;
 }
 
 .video {
@@ -17,9 +29,8 @@
   align-items: center;
   justify-content: center;
   background-color: rgba($color: gray, $alpha: 5%);
-  margin: 1rem;
-  padding: 1rem;
   border-radius: 5px;
+  box-shadow: 0 0 5px rgba($color: #000, $alpha: 50%);
 }
 
 .video__name {

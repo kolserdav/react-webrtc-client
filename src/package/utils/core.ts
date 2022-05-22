@@ -41,7 +41,6 @@ export const getPeer = ({
 export const loadRoom = ({
   peer,
   roomId,
-  pathname,
   userId,
   videoContainer,
   videoContainerSelf,
@@ -54,7 +53,6 @@ export const loadRoom = ({
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   peer: Peer;
   roomId: string;
-  pathname: string;
   userId: string;
   width?: number;
   height?: number;
@@ -63,7 +61,7 @@ export const loadRoom = ({
 }) => {
   peer.on('open', (id) => {
     // Connect to room
-    if (roomId) {
+    if (roomId !== userId) {
       sendMessage({
         peer,
         id: roomId,
@@ -99,11 +97,12 @@ export const loadRoom = ({
     // Listen room connections
     peer.on('connection', (conn) => {
       const guestId = conn.peer;
-      if (!roomId) {
-        if (users.filter((item) => item === guestId).length === 0) {
-          users.push(guestId);
-        }
+
+      const userIsNew = users.filter((item) => item === guestId).length === 0;
+      if (userIsNew) {
+        users.push(guestId);
       }
+
       // Guest disconnectted
       conn.on('close', () => {
         removeDisconnected({
@@ -129,7 +128,7 @@ export const loadRoom = ({
         const { value } = data as { value: string[] };
         switch (data.type) {
           case 'connect':
-            if (!pathname) {
+            if (roomId === userId) {
               users.forEach((item) => {
                 sendMessage({
                   peer,
@@ -160,6 +159,7 @@ export const loadRoom = ({
                   videoClassName,
                   nameClassName,
                   restart: true,
+                  userId,
                 });
               }
             });
@@ -188,6 +188,7 @@ export const loadRoom = ({
       height,
       videoClassName,
       nameClassName,
+      userId,
     });
   });
   peer.on('disconnected', () => {

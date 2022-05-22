@@ -1,5 +1,6 @@
 import { Peer } from './peer';
 import Console from './console';
+import s from '../Main.module.scss';
 
 export const removeDisconnected = ({
   videoContainer,
@@ -69,16 +70,17 @@ export const addVideoStream = ({
   video.srcObject = localStream;
 
   if (width) {
-    const _width = self ? width / 2 : width;
-    video.setAttribute('width', _width.toString());
+    video.setAttribute('width', width.toString());
   }
   if (height) {
-    const _height = self ? height / 2 : height;
-    video.setAttribute('height', _height.toString());
+    video.setAttribute('height', height.toString());
   }
   video.addEventListener('loadedmetadata', () => {
     const div = document.createElement('div');
     div.setAttribute('id', id);
+    if (self) {
+      div.classList.add(s.call__self__video);
+    }
     const { current } = videoContainer;
     let match = false;
     if (current) {
@@ -113,6 +115,7 @@ const callToRoom = ({
   stream,
   videoContainer,
   roomId,
+  userId,
   peer,
   width,
   height,
@@ -122,6 +125,7 @@ const callToRoom = ({
   stream: MediaStream;
   videoContainer: React.RefObject<HTMLDivElement>;
   roomId: string;
+  userId: string;
   peer: Peer;
   width?: number;
   height?: number;
@@ -129,7 +133,7 @@ const callToRoom = ({
   nameClassName: string;
 }) => {
   // If guest that call to room
-  if (roomId) {
+  if (roomId !== userId) {
     const call = peer.call(roomId, stream);
     call.on('stream', (remoteStream) => {
       // Runing twice anytime
@@ -151,6 +155,7 @@ export const loadSelfStreamAndCallToRoom = ({
   videoContainerSelf,
   id,
   roomId,
+  userId,
   peer,
   width,
   height,
@@ -162,6 +167,7 @@ export const loadSelfStreamAndCallToRoom = ({
   videoContainerSelf: React.RefObject<HTMLDivElement>;
   id: string;
   roomId: string;
+  userId: string;
   peer: Peer;
   width?: number;
   height?: number;
@@ -191,6 +197,7 @@ export const loadSelfStreamAndCallToRoom = ({
         peer,
         width,
         roomId,
+        userId,
         height,
         videoClassName,
         nameClassName,
@@ -199,6 +206,7 @@ export const loadSelfStreamAndCallToRoom = ({
     })
     .catch((err) => {
       Console.error('Failed to get local stream', err);
+      // TODO NotAllowedError
       // eslint-disable-next-line no-alert
       alert(`Error 203: ${err.message}`);
     });
