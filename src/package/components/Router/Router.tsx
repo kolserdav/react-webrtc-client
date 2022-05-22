@@ -1,9 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getPeer, loadRoom, getSupports, DEFAULT_PARAMS, removeDisconnected } from '../../utils';
+import {
+  getPeer,
+  loadRoom,
+  getSupports,
+  DEFAULT_PARAMS,
+  removeDisconnected,
+  SESSION_STORAGE_USER_ID,
+} from '../../utils';
 
 import s from './Router.module.scss';
+
+const sessionUser = sessionStorage.getItem(SESSION_STORAGE_USER_ID);
 
 /**
  * TODO
@@ -33,9 +42,13 @@ function Router({
   const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
 
   const userId = useMemo(
-    () => (location.search === '' ? pathname || uuidv4() : uuidv4()),
+    () => (location.search === '' ? pathname || uuidv4() : sessionUser || uuidv4()),
     [params]
   );
+
+  if (!sessionUser) {
+    localStorage.setItem(SESSION_STORAGE_USER_ID, userId);
+  }
 
   useEffect(() => {
     if (pathname === '') {

@@ -4,4 +4,7 @@ export const DEFAULT_PARAMS = {
   updated: false,
 };
 
+export const RENDER_DELAY = 500;
+
+export const SESSION_STORAGE_USER_ID = 'call-usr-id';
 export const SESSION_STORAGE_USERS = 'call-users-room';
