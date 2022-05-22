@@ -92,7 +92,8 @@ export const loadRoom = ({
         })
         .catch((err) => {
           Console.error('Failed to get local stream', err);
-          alert(`Error 95 ${JSON.stringify(err)}`);
+          // eslint-disable-next-line no-alert
+          alert(`Error 95: ${err.message}`);
         });
     });
     // Listen room connections

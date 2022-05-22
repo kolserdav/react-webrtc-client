@@ -200,6 +200,6 @@ export const loadSelfStreamAndCallToRoom = ({
     .catch((err) => {
       Console.error('Failed to get local stream', err);
       // eslint-disable-next-line no-alert
-      alert(`Error 203 ${JSON.stringify(err)}`);
+      alert(`Error 203: ${err.message}`);
     });
 };
