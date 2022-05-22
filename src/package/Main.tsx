@@ -10,7 +10,7 @@ interface MainProps {
   test?: boolean;
 }
 
-const isProd = process.env.NODE_ENV === 'development';
+const isProd = process.env.NODE_ENV === 'production';
 
 function Main({ test }: MainProps) {
   return (
