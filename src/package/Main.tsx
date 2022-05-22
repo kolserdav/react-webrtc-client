@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import Router from './components/Router/Router';
 
@@ -13,14 +13,22 @@ interface MainProps {
 const isProd = process.env.NODE_ENV === 'production';
 
 function Main({ test }: MainProps) {
+  const [show, setShow] = useState<boolean>(false);
   return (
     <BrowserRouter>
-      <Router
-        port={parseInt(process.env.REACT_APP_STUN_PORT as string, 10)}
-        host={process.env.REACT_APP_STUN_SERVER as string}
-        path="/"
-        secure={isProd}
-      />
+      {show && (
+        <Router
+          port={parseInt(process.env.REACT_APP_STUN_PORT as string, 10)}
+          host={process.env.REACT_APP_STUN_SERVER as string}
+          path="/"
+          secure={isProd}
+        />
+      )}
+      {!show && (
+        <button type="button" onClick={() => setShow(true)}>
+          start
+        </button>
+      )}
     </BrowserRouter>
   );
 }

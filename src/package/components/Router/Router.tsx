@@ -5,13 +5,6 @@ import { getPeer, loadRoom, getSupports } from '../../utils';
 
 import s from './Router.module.scss';
 
-interface RouterProps {
-  port: number;
-  host: string | 'localhost' | '127.0.0.1';
-  path: string | '/';
-  secure?: boolean;
-}
-
 /**
  * TODO
  * controls
