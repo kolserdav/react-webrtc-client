@@ -11,7 +11,9 @@ interface MainProps {
 }
 
 const isProd = process.env.NODE_ENV === 'production';
-
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+console.log(navigator);
 function Main({ test }: MainProps) {
   const [show, setShow] = useState<boolean>(false);
   return (
