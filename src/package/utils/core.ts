@@ -7,6 +7,10 @@ import { SESSION_STORAGE_USERS, RENDER_DELAY } from './constants';
 
 import s from '../Main.module.scss';
 
+/**
+ * TODO rewrite to class
+ */
+
 const _users = sessionStorage.getItem(SESSION_STORAGE_USERS);
 let users: string[] = _users ? JSON.parse(_users) : [];
 
@@ -130,20 +134,6 @@ export const addVideoStream = ({
         self,
         id,
       });
-    } else {
-      // Old video reload
-      removeDisconnected({
-        videoContainer,
-        userId: id,
-      });
-      renderVideo({
-        video,
-        videoContainer,
-        videoClassName,
-        nameClassName,
-        self,
-        id,
-      });
     }
   });
 };
@@ -213,6 +203,7 @@ const callToRoom = ({
             });
           });
           call.on('close', () => {
+            console.log(1, users);
             dropUser({ videoContainer, userId: item, peer });
           });
         }, RENDER_DELAY);
@@ -341,16 +332,15 @@ export const loadRoom = ({
         value: [userId],
         type: 'connect',
       });
-    } else if (users.length !== 0) {
-      users.forEach((item) => {
-        sendMessage({
-          peer,
-          id: item,
-          value: [userId],
-          type: 'connect',
-        });
-      });
     }
+    users.forEach((item) => {
+      sendMessage({
+        peer,
+        id: item,
+        value: [userId],
+        type: 'connect',
+      });
+    });
     // Listen incoming call
     peer.on('call', (call) => {
       navigator.mediaDevices
@@ -383,14 +373,17 @@ export const loadRoom = ({
     peer.on('connection', (conn) => {
       const guestId = conn.peer;
 
-      const userIsNew = users.filter((item) => item === guestId).length === 0;
-      if (userIsNew) {
-        users.push(guestId);
-        saveUsers(users);
+      if (roomId === userId) {
+        const userIsNew = users.filter((item) => item === guestId).length === 0;
+        if (userIsNew) {
+          users.push(guestId);
+          saveUsers(users);
+        }
       }
 
       // Guest disconnected
       conn.on('close', () => {
+        console.log(0, users);
         dropUser({ videoContainer, userId: guestId, peer });
         Console.info('Event', { type: 'close', value: guestId });
       });
@@ -413,7 +406,6 @@ export const loadRoom = ({
                 id: _id,
               });
             });
-
             break;
           case 'onconnect':
             // Call from new guest to other guests
@@ -435,6 +427,7 @@ export const loadRoom = ({
               }
             });
             users = value;
+            saveUsers(users);
             break;
           case 'dropuser':
             removeDisconnected({

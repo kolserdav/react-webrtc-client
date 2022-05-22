@@ -47,7 +47,7 @@ function Router({
   );
 
   if (!sessionUser) {
-    localStorage.setItem(SESSION_STORAGE_USER_ID, userId);
+    sessionStorage.setItem(SESSION_STORAGE_USER_ID, userId);
   }
 
   useEffect(() => {
