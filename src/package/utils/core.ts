@@ -7,9 +7,12 @@ import {
   addVideoStream,
   removeDisconnected,
   loadSelfStreamAndCallToRoom,
+  saveUsers,
 } from './lib';
+import { SESSION_STORAGE_USERS } from './constants';
 
-const users: string[] = [];
+const _users = sessionStorage.getItem(SESSION_STORAGE_USERS);
+const users: string[] = _users ? JSON.parse(_users) : [];
 
 export const getSupports = () => util.supports;
 
@@ -101,6 +104,7 @@ export const loadRoom = ({
       const userIsNew = users.filter((item) => item === guestId).length === 0;
       if (userIsNew) {
         users.push(guestId);
+        saveUsers(users);
       }
 
       // Guest disconnectted
@@ -110,6 +114,7 @@ export const loadRoom = ({
           userId: guestId,
         });
         users.splice(users.indexOf(guestId), 1);
+        saveUsers(users);
         // Send to guests for drop disconnected
         users.forEach((item) => {
           sendMessage({
@@ -160,6 +165,7 @@ export const loadRoom = ({
                   nameClassName,
                   restart: true,
                   userId,
+                  users,
                 });
               }
             });
@@ -189,6 +195,7 @@ export const loadRoom = ({
       videoClassName,
       nameClassName,
       userId,
+      users,
     });
   });
   peer.on('disconnected', () => {

@@ -3,3 +3,5 @@ export const DEFAULT_PARAMS = {
   height: 300,
   updated: false,
 };
+
+export const SESSION_STORAGE_USERS = 'call-users-room';

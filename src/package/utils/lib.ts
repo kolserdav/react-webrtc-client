@@ -1,6 +1,7 @@
 import { Peer } from './peer';
 import Console from './console';
 import s from '../Main.module.scss';
+import { SESSION_STORAGE_USERS } from './constants';
 
 export const removeDisconnected = ({
   videoContainer,
@@ -111,12 +112,17 @@ export const addVideoStream = ({
   });
 };
 
+export const saveUsers = (users: string[]): void => {
+  sessionStorage.setItem(SESSION_STORAGE_USERS, JSON.stringify(users));
+};
+
 const callToRoom = ({
   stream,
   videoContainer,
   roomId,
   userId,
   peer,
+  users,
   width,
   height,
   videoClassName,
@@ -127,6 +133,7 @@ const callToRoom = ({
   roomId: string;
   userId: string;
   peer: Peer;
+  users: string[];
   width?: number;
   height?: number;
   videoClassName?: string;
@@ -147,6 +154,22 @@ const callToRoom = ({
         nameClassName,
       });
     });
+  } else if (users.length) {
+    users.forEach((item) => {
+      const call = peer.call(item, stream);
+      call.on('stream', (remoteStream) => {
+        // Runing twice anytime
+        addVideoStream({
+          stream: remoteStream,
+          id: item,
+          videoContainer,
+          width,
+          height,
+          videoClassName,
+          nameClassName,
+        });
+      });
+    });
   }
 };
 
@@ -157,6 +180,7 @@ export const loadSelfStreamAndCallToRoom = ({
   roomId,
   userId,
   peer,
+  users,
   width,
   height,
   restart,
@@ -169,6 +193,7 @@ export const loadSelfStreamAndCallToRoom = ({
   roomId: string;
   userId: string;
   peer: Peer;
+  users: string[];
   width?: number;
   height?: number;
   restart?: boolean;
@@ -201,6 +226,7 @@ export const loadSelfStreamAndCallToRoom = ({
         height,
         videoClassName,
         nameClassName,
+        users,
       });
       Console.info('Event', { type: 'loadvideo', value: stream });
     })
