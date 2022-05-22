@@ -134,6 +134,20 @@ export const addVideoStream = ({
         self,
         id,
       });
+    } else {
+      // Old video reload
+      removeDisconnected({
+        videoContainer,
+        userId: id,
+      });
+      renderVideo({
+        video,
+        videoContainer,
+        videoClassName,
+        nameClassName,
+        self,
+        id,
+      });
     }
   });
 };
