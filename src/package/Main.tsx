@@ -10,10 +10,17 @@ interface MainProps {
   test?: boolean;
 }
 
+const isProd = process.env.NODE_ENV === 'production';
+
 function Main({ test }: MainProps) {
   return (
     <BrowserRouter>
-      <Router port={443} host="stun.uyem.ru" path="/" secure />
+      <Router
+        port={parseInt(process.env.REACT_APP_STUN_PORT as string, 10)}
+        host={process.env.REACT_APP_STUN_SERVER as string}
+        path="/"
+        secure={isProd}
+      />
     </BrowserRouter>
   );
 }

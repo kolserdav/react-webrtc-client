@@ -53,7 +53,7 @@ function Router({
       host,
       path,
       id: userId,
-      debug: process.env.NODE_ENV === 'production' ? 0 : 3,
+      debug: process.env.NODE_ENV === 'production' ? 0 : 2,
       secure,
     });
     // Starting room after page load

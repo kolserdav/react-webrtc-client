@@ -78,6 +78,7 @@ export const loadRoom = ({
         .then((stream) => {
           call.answer(stream);
           call.on('stream', (remoteStream) => {
+            // Runing twice anytime
             addVideoStream({
               stream: remoteStream,
               id: call.peer,
@@ -118,7 +119,7 @@ export const loadRoom = ({
           });
         });
 
-        Console.info('Event', { type: 'disconnect', value: guestId });
+        Console.info('Event', { type: 'close', value: guestId });
       });
       // Listen room answer
       const _id = conn.peer;
@@ -173,6 +174,7 @@ export const loadRoom = ({
 
         Console.info('Event', data);
       });
+      Console.info('Event', { type: 'connection', value: conn });
     });
     loadSelfStreamAndCallToRoom({
       videoContainer,

@@ -91,6 +91,7 @@ export const addVideoStream = ({
       }
     }
     if (!match) {
+      // Once run guarantee
       const title = document.createElement('p');
       title.innerHTML = id;
       if (nameClassName) {
@@ -103,6 +104,7 @@ export const addVideoStream = ({
       div.append(video);
       videoContainer.current?.append(div);
       video.play();
+      Console.info('Event', { type: 'loadedmetadata', value: id });
     }
   });
 };
@@ -130,6 +132,7 @@ const callToRoom = ({
   if (roomId) {
     const call = peer.call(roomId, stream);
     call.on('stream', (remoteStream) => {
+      // Runing twice anytime
       addVideoStream({
         stream: remoteStream,
         id: roomId,
@@ -192,6 +195,7 @@ export const loadSelfStreamAndCallToRoom = ({
         videoClassName,
         nameClassName,
       });
+      Console.info('Event', { type: 'loadvideo', value: stream });
     })
     .catch((err) => {
       Console.error('Failed to get local stream', err);

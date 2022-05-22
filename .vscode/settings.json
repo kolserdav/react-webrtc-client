@@ -11,6 +11,9 @@
   "stylelint.enable": true,
   "stylelint.validate": ["css", "scss"],
   "files.associations": {
-    ".stylelintrc": ".json"
+    ".stylelintrc": ".json",
+    ".env": "ini",
+    ".env.development": "ini",
+    ".env.example": "ini"
   }
 }
