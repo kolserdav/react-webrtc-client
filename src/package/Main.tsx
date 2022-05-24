@@ -20,6 +20,7 @@ function Main({ test }: MainProps) {
         host={process.env.REACT_APP_STUN_SERVER as string}
         path="/"
         secure={isProd}
+        debug={process.env.NODE_ENV === 'production' ? 0 : 2}
       />
     </BrowserRouter>
   );

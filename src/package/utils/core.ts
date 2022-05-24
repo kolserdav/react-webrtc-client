@@ -191,10 +191,7 @@ const callToRoom = ({
         });
       });
       call.on('close', () => {
-        removeDisconnected({
-          videoContainer,
-          userId: roomId,
-        });
+        dropUser({ videoContainer, userId: roomId, peer });
       });
     }, RENDER_DELAY);
   } else if (users.length) {
@@ -217,7 +214,6 @@ const callToRoom = ({
             });
           });
           call.on('close', () => {
-            console.log(1, users);
             dropUser({ videoContainer, userId: item, peer });
           });
         }, RENDER_DELAY);
@@ -397,7 +393,6 @@ export const loadRoom = ({
 
       // Guest disconnected
       conn.on('close', () => {
-        console.log(0, users);
         dropUser({ videoContainer, userId: guestId, peer });
         Console.info('Event', { type: 'close', value: guestId });
       });
@@ -470,8 +465,8 @@ export const loadRoom = ({
       userId,
     });
   });
-  peer.on('disconnected', () => {
-    /** */
+  peer.on('disconnected', (id) => {
+    console.log('disconnected', id);
   });
   peer.on('error', (err) => {
     Console.error('Error', err);

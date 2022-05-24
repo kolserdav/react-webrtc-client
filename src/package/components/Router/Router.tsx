@@ -25,11 +25,13 @@ function Router({
   host,
   path,
   secure,
+  debug,
 }: {
   port: number;
   host: string | 'localhost' | '127.0.0.1';
   path: string | '/';
   secure?: boolean;
+  debug?: 0 | 1 | 2 | 3;
 }) {
   const videoContainer = useRef<HTMLDivElement>(null);
   const videoContainerSelf = useRef<HTMLDivElement>(null);
@@ -96,7 +98,7 @@ function Router({
         host,
         path,
         id: userId,
-        debug: process.env.NODE_ENV === 'production' ? 0 : 2,
+        debug,
         secure,
       });
       // Starting room after page load
@@ -136,6 +138,7 @@ function Router({
 
 Router.defaultProps = {
   secure: false,
+  debug: 0,
 };
 
 export default Router;
