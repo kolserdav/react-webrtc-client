@@ -1,6 +1,14 @@
 import { Peer } from './peer';
 import { SESSION_STORAGE_USERS } from './constants';
 
+export const getSessionUsers = (): string[] | null => {
+  const users = sessionStorage.getItem(SESSION_STORAGE_USERS);
+  if (users) {
+    return JSON.parse(users);
+  }
+  return null;
+};
+
 export const removeDisconnected = ({
   videoContainer,
   userId,
@@ -41,15 +49,30 @@ export const sendMessage = async ({
   });
 };
 
-export const saveUsers = ({
-  users,
-  onchangeUserList,
-}: {
-  users: string[];
-  onchangeUserList?: (list: string[]) => void;
-}): void => {
-  if (onchangeUserList) {
-    onchangeUserList(users);
-  }
+export const saveUsers = ({ users }: { users: string[] }): void => {
   sessionStorage.setItem(SESSION_STORAGE_USERS, JSON.stringify(users));
+};
+
+export const getWidthOfItem = ({
+  container,
+}: {
+  container: HTMLDivElement;
+}): { width: number; items: number } => {
+  const {
+    children: { length },
+  } = container;
+  const { width, height: outerHeight } = container.getBoundingClientRect();
+  const height = outerHeight - (outerHeight / 100) * 10;
+  let a = 0;
+  if (length) {
+    const S = width * height;
+    const s = Math.ceil(S / length);
+    a = Math.sqrt(s);
+    // eslint-disable-next-line no-nested-ternary
+    a = a > height ? height : a > width ? width : a;
+  }
+  return {
+    width: a,
+    items: length,
+  };
 };

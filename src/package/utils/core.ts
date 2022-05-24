@@ -2,8 +2,8 @@
 import React from 'react';
 import { Peer, util } from './peer';
 import Console from './console';
-import { sendMessage, removeDisconnected, saveUsers } from './lib';
-import { SESSION_STORAGE_USERS, RENDER_DELAY } from './constants';
+import { sendMessage, removeDisconnected, saveUsers, getSessionUsers } from './lib';
+import { RENDER_DELAY } from './constants';
 
 import s from '../Main.module.scss';
 
@@ -11,8 +11,8 @@ import s from '../Main.module.scss';
  * TODO rewrite to class
  */
 
-const _users = sessionStorage.getItem(SESSION_STORAGE_USERS);
-let users: string[] = _users ? JSON.parse(_users) : [];
+const _users = getSessionUsers();
+let users: string[] = _users || [];
 
 export const getSupports = () => util.supports;
 
@@ -95,12 +95,6 @@ export const addVideoStream = ({
   // eslint-disable-next-line no-param-reassign
   video.srcObject = localStream;
 
-  if (width) {
-    video.setAttribute('width', width.toString());
-  }
-  if (height) {
-    video.setAttribute('height', height.toString());
-  }
   video.addEventListener('loadedmetadata', () => {
     const { current } = videoContainer;
     let match = false;
@@ -149,7 +143,6 @@ const callToRoom = ({
   width,
   height,
   videoClassName,
-  onchangeUserList,
 }: {
   stream: MediaStream;
   videoContainer: React.RefObject<HTMLDivElement>;
@@ -159,7 +152,6 @@ const callToRoom = ({
   width?: number;
   height?: number;
   videoClassName?: string;
-  onchangeUserList?: (list: string[]) => void;
 }) => {
   // If guest that call to room
   if (roomId !== userId) {
@@ -178,7 +170,7 @@ const callToRoom = ({
         });
       });
       call.on('close', () => {
-        dropUser({ videoContainer, userId: roomId, peer, onchangeUserList });
+        dropUser({ videoContainer, userId: roomId, peer });
       });
     }, RENDER_DELAY);
   } else if (users.length) {
@@ -200,7 +192,7 @@ const callToRoom = ({
             });
           });
           call.on('close', () => {
-            dropUser({ videoContainer, userId: item, peer, onchangeUserList });
+            dropUser({ videoContainer, userId: item, peer });
           });
         }, RENDER_DELAY);
       }
@@ -208,9 +200,44 @@ const callToRoom = ({
   }
 };
 
+export const changeDimensions = ({
+  videoContainer,
+  width,
+}: {
+  videoContainer: React.RefObject<HTMLDivElement>;
+  width: number;
+}): void => {
+  setTimeout(() => {
+    const { current } = videoContainer;
+    if (current) {
+      const { children } = current;
+      for (let i = 0; children[i]; i++) {
+        const child = children[i];
+        const { firstElementChild }: any = child;
+        if (firstElementChild) {
+          const { videoWidth, videoHeight } =
+            firstElementChild.getBoundingClientRect() as HTMLVideoElement;
+          const _width = width.toString();
+          if (videoWidth > videoHeight && firstElementChild.getAttribute('width') !== _width) {
+            const coeff = videoWidth / videoHeight;
+            firstElementChild.setAttribute('width', Math.ceil(videoWidth * coeff).toString());
+            firstElementChild.setAttribute('height', _width);
+          } else if (firstElementChild.getAttribute('heigth') !== _width) {
+            const coeff = videoHeight / videoWidth;
+            firstElementChild.setAttribute('height', Math.ceil(videoHeight * coeff).toString());
+            firstElementChild.setAttribute('width', _width);
+          }
+        }
+      }
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn('Video container is missing');
+    }
+  }, 0);
+};
+
 export const loadSelfStreamAndCallToRoom = ({
   videoContainer,
-  videoContainerSelf,
   id,
   roomId,
   userId,
@@ -219,10 +246,8 @@ export const loadSelfStreamAndCallToRoom = ({
   height,
   restart,
   videoClassName,
-  onchangeUserList,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
-  videoContainerSelf: React.RefObject<HTMLDivElement>;
   id: string;
   roomId: string;
   userId: string;
@@ -231,7 +256,6 @@ export const loadSelfStreamAndCallToRoom = ({
   height?: number;
   restart?: boolean;
   videoClassName?: string;
-  onchangeUserList?: (list: string[]) => void;
 }) => {
   // Load self stream
   navigator.mediaDevices
@@ -258,7 +282,6 @@ export const loadSelfStreamAndCallToRoom = ({
         userId,
         height,
         videoClassName,
-        onchangeUserList,
       });
       Console.info('Event', { type: 'loadvideo', value: stream });
     })
@@ -275,19 +298,17 @@ const dropUser = ({
   videoContainer,
   userId,
   peer,
-  onchangeUserList,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
   userId: string;
   peer: Peer;
-  onchangeUserList?: (list: string[]) => void;
 }) => {
   removeDisconnected({
     videoContainer,
     userId,
   });
   users.splice(users.indexOf(userId), 1);
-  saveUsers({ users, onchangeUserList });
+  saveUsers({ users });
   // Send to guests for drop disconnected
   users.forEach((item) => {
     sendMessage({
@@ -304,21 +325,17 @@ export const loadRoom = ({
   roomId,
   userId,
   videoContainer,
-  videoContainerSelf,
   width,
   height,
   videoClassName,
-  onchangeUserList,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
-  videoContainerSelf: React.RefObject<HTMLDivElement>;
   peer: Peer;
   roomId: string;
   userId: string;
   width?: number;
   height?: number;
   videoClassName?: string;
-  onchangeUserList?: (list: string[]) => void;
 }) => {
   peer.on('open', (id) => {
     // Connect to room
@@ -331,7 +348,7 @@ export const loadRoom = ({
       });
     }
     users.forEach((item) => {
-      if (item !== userId) {
+      if (item !== userId && item !== roomId) {
         sendMessage({
           peer,
           id: item,
@@ -359,7 +376,7 @@ export const loadRoom = ({
             });
           });
           call.on('disconnect', () => {
-            dropUser({ videoContainer, peer, userId: call.peer, onchangeUserList });
+            dropUser({ videoContainer, peer, userId: call.peer });
           });
         })
         .catch((err) => {
@@ -377,12 +394,12 @@ export const loadRoom = ({
       const userIsNew = users.filter((item) => item === guestId).length === 0;
       if (userIsNew) {
         users.push(guestId);
-        saveUsers({ users, onchangeUserList });
+        saveUsers({ users });
       }
 
       // Guest disconnected
       conn.on('close', () => {
-        dropUser({ videoContainer, userId: guestId, peer, onchangeUserList });
+        dropUser({ videoContainer, userId: guestId, peer });
       });
       // Listen room answer
       const _id = conn.peer;
@@ -413,18 +430,15 @@ export const loadRoom = ({
                   id: userId,
                   roomId: item,
                   peer,
-                  videoContainerSelf,
                   width,
                   height,
-                  videoClassName,
                   restart: true,
                   userId,
-                  onchangeUserList,
                 });
               }
             });
             users = value;
-            saveUsers({ users, onchangeUserList });
+            saveUsers({ users });
             break;
           case 'dropuser':
             removeDisconnected({
@@ -445,12 +459,9 @@ export const loadRoom = ({
       id: userId,
       roomId,
       peer,
-      videoContainerSelf,
       width,
       height,
-      videoClassName,
       userId,
-      onchangeUserList,
     });
   });
   peer.on('error', (err) => {
@@ -459,7 +470,7 @@ export const loadRoom = ({
       if (err.message.indexOf(item)) {
         removeDisconnected({ videoContainer, userId: item });
         users.splice(users.indexOf(item), 1);
-        saveUsers({ users, onchangeUserList });
+        saveUsers({ users });
       }
     });
     Console.error('Error 322:', err);
