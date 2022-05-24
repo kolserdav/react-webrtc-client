@@ -6,8 +6,6 @@ import { sendMessage, removeDisconnected, saveUsers, getSessionUsers } from './l
 import { RENDER_DELAY } from './constants';
 import store from './store';
 
-import s from '../Main.module.scss';
-
 /**
  * TODO rewrite to class
  */
@@ -57,17 +55,11 @@ const callToRoom = ({
   roomId,
   userId,
   peer,
-  width,
-  height,
-  videoClassName,
 }: {
   stream: MediaStream;
   roomId: string;
   userId: string;
   peer: Peer;
-  width?: number;
-  height?: number;
-  videoClassName?: string;
 }) => {
   // If guest that call to room
   if (roomId !== userId) {
@@ -198,6 +190,34 @@ const dropUser = ({ userId, peer }: { userId: string; peer: Peer }) => {
   });
 };
 
+const connectWithAll = ({
+  users: list,
+  peer,
+  userId,
+}: {
+  users: string[];
+  peer: Peer;
+  userId: string;
+}) => {
+  list.forEach((item) => {
+    if (item !== userId) {
+      loadSelfStreamAndCallToRoom({
+        id: userId,
+        roomId: item,
+        peer,
+        restart: true,
+        userId,
+      });
+      sendMessage({
+        peer,
+        id: item,
+        value: [userId],
+        type: 'connect',
+      });
+    }
+  });
+};
+
 export const loadRoom = ({
   peer,
   roomId,
@@ -216,17 +236,9 @@ export const loadRoom = ({
         value: [userId],
         type: 'connect',
       });
+    } else {
+      connectWithAll({ peer, userId, users });
     }
-    users.forEach((item) => {
-      if (item !== userId && item !== roomId) {
-        sendMessage({
-          peer,
-          id: item,
-          value: [userId],
-          type: 'connect',
-        });
-      }
-    });
     // Listen incoming call
     peer.on('call', (call) => {
       navigator.mediaDevices
@@ -268,6 +280,7 @@ export const loadRoom = ({
       });
       // Listen room answer
       const _id = conn.peer;
+      let diff: string[] = [];
       conn.on('data', (data) => {
         const { value } = data as { value: string[] };
         switch (data.type) {
@@ -276,28 +289,18 @@ export const loadRoom = ({
               sendMessage({
                 peer,
                 type: 'onconnect',
-                value: users.map((_item) => {
-                  if (_item === _id) {
-                    return userId;
-                  }
-                  return item;
-                }),
+                value: users,
                 id: _id,
               });
             });
             break;
           case 'onconnect':
             // Call from new guest to other guests
-            value.forEach((item) => {
-              if (item !== userId) {
-                loadSelfStreamAndCallToRoom({
-                  id: userId,
-                  roomId: item,
-                  peer,
-                  restart: true,
-                  userId,
-                });
-              }
+            diff = value.filter((x) => users.includes(x));
+            connectWithAll({
+              peer,
+              userId,
+              users: roomId !== userId ? value : diff,
             });
             users = value;
             saveUsers({ users });

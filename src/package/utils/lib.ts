@@ -7,6 +7,30 @@ export interface Video {
   id: string;
 }
 
+interface VideoSource extends Video {
+  ref: React.Ref<HTMLVideoElement>;
+}
+
+export const getRefs = (_streams: Video[]): VideoSource[] => {
+  const sources = [];
+  for (let i = 0; _streams[i]; i++) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const item: any = _streams[i];
+    const _item: VideoSource = { ...item };
+    _item.ref = (node: HTMLVideoElement) => {
+      // eslint-disable-next-line no-param-reassign
+      if (node) node.srcObject = item.stream;
+    };
+    sources.push(_item);
+  }
+  return sources.sort((a, b) => {
+    if (a < b) {
+      return -1;
+    }
+    return 1;
+  });
+};
+
 export const getSessionUsers = (): string[] | null => {
   const users = sessionStorage.getItem(SESSION_STORAGE_USERS);
   if (users) {
