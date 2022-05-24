@@ -4,6 +4,7 @@ import { Peer, util } from './peer';
 import Console from './console';
 import { sendMessage, removeDisconnected, saveUsers, getSessionUsers } from './lib';
 import { RENDER_DELAY } from './constants';
+import store from './store';
 
 import s from '../Main.module.scss';
 
@@ -41,102 +42,18 @@ export const getPeer = ({
   return peer;
 };
 
-const renderVideo = ({
-  video,
-  id,
-  self,
-  videoContainer,
-  videoClassName,
-}: {
-  video: HTMLVideoElement;
-  id: string;
-  videoContainer: React.RefObject<HTMLDivElement>;
-  self?: boolean;
-  videoClassName?: string;
-}): void => {
-  const div = document.createElement('div');
-  div.setAttribute('id', id);
-  div.setAttribute('title', self ? `${id} (Me)` : id);
-  if (self) {
-    div.classList.add(s.call__self__video);
-  }
-  if (videoClassName) {
-    div.classList.add(videoClassName);
-  }
-  div.append(video);
-  videoContainer.current?.append(div);
-  video.play();
-};
-
-export const addVideoStream = ({
-  peer,
-  stream,
-  id,
-  self,
-  videoContainer,
-  width,
-  height,
-  videoClassName,
-}: {
-  peer: Peer;
-  stream: MediaStream;
-  id: string;
-  videoContainer: React.RefObject<HTMLDivElement>;
-  width?: number;
-  height?: number;
-  self?: boolean;
-  videoClassName?: string;
-}): void => {
-  const video = document.createElement('video');
-  const localStream = stream;
-  if (self) {
-    localStream.getAudioTracks()[0].enabled = false;
-  }
-  // eslint-disable-next-line no-param-reassign
-  video.srcObject = localStream;
-
-  video.addEventListener('loadedmetadata', () => {
-    const { current } = videoContainer;
-    let match = false;
-    if (current) {
-      const { children } = current;
-      for (let i = 0; children[i]; i++) {
-        const child = children[i];
-        const childId = child.getAttribute('id') || '';
-        if (childId === id) {
-          match = true;
-        }
-      }
-      if (!match) {
-        // Once video guarantee
-        renderVideo({
-          video,
-          videoContainer,
-          videoClassName,
-          self,
-          id,
-        });
-      } else {
-        // Old video reload
-        removeDisconnected({
-          videoContainer,
-          userId: id,
-        });
-        renderVideo({
-          video,
-          videoContainer,
-          videoClassName,
-          self,
-          id,
-        });
-      }
-    }
+export const addVideoStream = ({ stream, id }: { stream: MediaStream; id: string }): void => {
+  store.dispatch({
+    type: 'added',
+    added: {
+      id,
+      stream,
+    },
   });
 };
 
 const callToRoom = ({
   stream,
-  videoContainer,
   roomId,
   userId,
   peer,
@@ -145,7 +62,6 @@ const callToRoom = ({
   videoClassName,
 }: {
   stream: MediaStream;
-  videoContainer: React.RefObject<HTMLDivElement>;
   roomId: string;
   userId: string;
   peer: Peer;
@@ -162,15 +78,10 @@ const callToRoom = ({
         addVideoStream({
           stream: remoteStream,
           id: roomId,
-          videoContainer,
-          width,
-          height,
-          videoClassName,
-          peer,
         });
       });
       call.on('close', () => {
-        dropUser({ videoContainer, userId: roomId, peer });
+        dropUser({ userId: roomId, peer });
       });
     }, RENDER_DELAY);
   } else if (users.length) {
@@ -184,15 +95,10 @@ const callToRoom = ({
             addVideoStream({
               stream: remoteStream,
               id: item,
-              videoContainer,
-              width,
-              height,
-              videoClassName,
-              peer,
             });
           });
           call.on('close', () => {
-            dropUser({ videoContainer, userId: item, peer });
+            dropUser({ userId: item, peer });
           });
         }, RENDER_DELAY);
       }
@@ -237,25 +143,17 @@ export const changeDimensions = ({
 };
 
 export const loadSelfStreamAndCallToRoom = ({
-  videoContainer,
   id,
   roomId,
   userId,
   peer,
-  width,
-  height,
   restart,
-  videoClassName,
 }: {
-  videoContainer: React.RefObject<HTMLDivElement>;
   id: string;
   roomId: string;
   userId: string;
   peer: Peer;
-  width?: number;
-  height?: number;
   restart?: boolean;
-  videoClassName?: string;
 }) => {
   // Load self stream
   navigator.mediaDevices
@@ -265,25 +163,14 @@ export const loadSelfStreamAndCallToRoom = ({
         addVideoStream({
           stream,
           id,
-          self: true,
-          videoContainer,
-          width,
-          height,
-          videoClassName,
-          peer,
         });
       }
       callToRoom({
         stream,
-        videoContainer,
         peer,
-        width,
         roomId,
         userId,
-        height,
-        videoClassName,
       });
-      Console.info('Event', { type: 'loadvideo', value: stream });
     })
     .catch((err) => {
       if (err.name === 'NotAllowedError') {
@@ -294,17 +181,8 @@ export const loadSelfStreamAndCallToRoom = ({
     });
 };
 
-const dropUser = ({
-  videoContainer,
-  userId,
-  peer,
-}: {
-  videoContainer: React.RefObject<HTMLDivElement>;
-  userId: string;
-  peer: Peer;
-}) => {
+const dropUser = ({ userId, peer }: { userId: string; peer: Peer }) => {
   removeDisconnected({
-    videoContainer,
     userId,
   });
   users.splice(users.indexOf(userId), 1);
@@ -324,18 +202,10 @@ export const loadRoom = ({
   peer,
   roomId,
   userId,
-  videoContainer,
-  width,
-  height,
-  videoClassName,
 }: {
-  videoContainer: React.RefObject<HTMLDivElement>;
   peer: Peer;
   roomId: string;
   userId: string;
-  width?: number;
-  height?: number;
-  videoClassName?: string;
 }) => {
   peer.on('open', (id) => {
     // Connect to room
@@ -368,15 +238,10 @@ export const loadRoom = ({
             addVideoStream({
               stream: remoteStream,
               id: call.peer,
-              videoContainer,
-              width,
-              height,
-              videoClassName,
-              peer,
             });
           });
           call.on('disconnect', () => {
-            dropUser({ videoContainer, peer, userId: call.peer });
+            dropUser({ peer, userId: call.peer });
           });
         })
         .catch((err) => {
@@ -399,7 +264,7 @@ export const loadRoom = ({
 
       // Guest disconnected
       conn.on('close', () => {
-        dropUser({ videoContainer, userId: guestId, peer });
+        dropUser({ userId: guestId, peer });
       });
       // Listen room answer
       const _id = conn.peer;
@@ -426,12 +291,9 @@ export const loadRoom = ({
             value.forEach((item) => {
               if (item !== userId) {
                 loadSelfStreamAndCallToRoom({
-                  videoContainer,
                   id: userId,
                   roomId: item,
                   peer,
-                  width,
-                  height,
                   restart: true,
                   userId,
                 });
@@ -442,7 +304,6 @@ export const loadRoom = ({
             break;
           case 'dropuser':
             removeDisconnected({
-              videoContainer,
               userId: value[0],
             });
             break;
@@ -455,12 +316,9 @@ export const loadRoom = ({
       Console.info('Event', { type: 'connection', value: conn });
     });
     loadSelfStreamAndCallToRoom({
-      videoContainer,
       id: userId,
       roomId,
       peer,
-      width,
-      height,
       userId,
     });
   });
@@ -468,7 +326,7 @@ export const loadRoom = ({
     Console.error('Error', err);
     users.forEach((item) => {
       if (err.message.indexOf(item)) {
-        removeDisconnected({ videoContainer, userId: item });
+        removeDisconnected({ userId: item });
         users.splice(users.indexOf(item), 1);
         saveUsers({ users });
       }

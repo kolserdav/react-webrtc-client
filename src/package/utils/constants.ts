@@ -1,7 +1,6 @@
 export const DEFAULT_PARAMS = {
   width: 400,
   height: 300,
-  updated: 0,
 };
 
 export const RENDER_DELAY = 500;

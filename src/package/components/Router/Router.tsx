@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -6,16 +6,36 @@ import {
   loadRoom,
   getSupports,
   DEFAULT_PARAMS,
-  removeDisconnected,
   SESSION_STORAGE_USER_ID,
-  changeDimensions,
-  getWidthOfItem,
+  store,
+  Video,
 } from '../../utils';
-
 import s from './Router.module.scss';
 
+interface VideoSource extends Video {
+  ref: React.Ref<HTMLVideoElement>;
+}
+
+const getRefs = (_streams: Video[]): VideoSource[] => {
+  const sources = [];
+  for (let i = 0; _streams[i]; i++) {
+    const item: any = _streams[i];
+    const _item: VideoSource = { ...item };
+    _item.ref = (node: HTMLVideoElement) => {
+      // eslint-disable-next-line no-param-reassign
+      if (node) node.srcObject = item.stream;
+    };
+    sources.push(_item);
+  }
+  return sources.sort((a, b) => {
+    if (a < b) {
+      return -1;
+    }
+    return 1;
+  });
+};
+
 const sessionUser = sessionStorage.getItem(SESSION_STORAGE_USER_ID);
-let _items = -1;
 let _sessionUser = '';
 
 /**
@@ -37,7 +57,6 @@ function Router({
   secure?: boolean;
   debug?: 0 | 1 | 2 | 3;
 }) {
-  const videoContainer = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const _location = useLocation();
   const location = { ..._location };
@@ -45,13 +64,12 @@ function Router({
   const { pathname } = location;
 
   const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
-  const [cols, setCols] = useState<number>(2);
-  const [users, setUsers] = useState<string[]>([]);
-  const [changeDims, setChangeDims] = useState<boolean>(false);
+  const [streams, setStreams] = useState<Video[]>([]);
+  const [started, setStarted] = useState<boolean>(false);
 
   const userId = useMemo(
     () => (location.search === '' ? pathname || uuidv4() : sessionUser || _sessionUser || uuidv4()),
-    [params]
+    []
   );
 
   if (!sessionUser) {
@@ -65,34 +83,39 @@ function Router({
     if (pathname === '') {
       navigate(userId);
     }
-  }, []);
+  }, [navigate, pathname, userId]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const { current } = videoContainer;
-      if (current) {
-        const { width, items } = getWidthOfItem({ container: current });
-        console.log(_items, items);
-        if (items !== _items) {
-          setParams({
-            width,
-            height: width,
-            updated: 1,
-          });
-          _items = items;
-        }
-        changeDimensions({ videoContainer, width });
+    const clearSubs = store.subscribe(() => {
+      if (started) {
+        setStarted(false);
       }
-    }, 1000);
+      const { type, added, deleted } = store.getState();
+      if (type === 'added' && added) {
+        if (streams.filter((item) => item.id === added.id).length === 0) {
+          const _streams = streams.map((item) => item);
+          _streams.push(added);
+          setStreams(_streams);
+        }
+      } else if (type === 'deleted' && deleted) {
+        const _streams = streams.filter((item) => item.id !== deleted);
+        setStreams(_streams);
+      }
+    });
     return () => {
-      clearInterval(interval);
+      clearSubs();
     };
-  }, []);
+  }, [streams]);
 
   /**
    * Check supports
    */
   useEffect(() => {
+    setParams({
+      width: 200,
+      height: 300,
+    });
+    setStarted(true);
     const supports = getSupports();
     if (!supports.webRTC) {
       // eslint-disable-next-line no-alert
@@ -104,8 +127,7 @@ function Router({
    * Create room
    */
   useEffect(() => {
-    console.log(params);
-    if (params.updated == 0) {
+    if (started) {
       // Once get peer instance
       const peer = getPeer({
         port,
@@ -119,27 +141,30 @@ function Router({
       loadRoom({
         peer,
         userId,
-        videoContainer,
         roomId: pathname,
-        width: params.width,
-        height: params.height,
-        videoClassName: s.video,
       });
     }
-    return () => {
-      removeDisconnected({ videoContainer, userId });
-    };
-  }, [port, host, path, userId, pathname, params.updated]);
+  }, [port, host, path, userId, pathname, started, debug, params, secure]);
 
   const connectLink = `${window.location.origin}/${userId}?guest=1`;
 
+  const _streams = useMemo(() => getRefs(streams), [streams]);
+
   return (
     <div className={s.wrapper}>
-      <div
-        className={s.container}
-        ref={videoContainer}
-        style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}
-      />
+      <div className={s.container}>
+        {_streams.map((item) => (
+          <video
+            key={item.id}
+            width={params.width}
+            height={params.height}
+            ref={item.ref}
+            id={item.id}
+            title={item.id}
+            autoPlay
+          />
+        ))}
+      </div>
       <div className={s.actions}>
         <a className={s.room__link} target="_blank" href={connectLink} rel="noreferrer">
           {connectLink}

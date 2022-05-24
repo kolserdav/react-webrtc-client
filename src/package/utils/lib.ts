@@ -1,5 +1,11 @@
 import { Peer } from './peer';
 import { SESSION_STORAGE_USERS } from './constants';
+import store from './store';
+
+export interface Video {
+  stream: MediaStream;
+  id: string;
+}
 
 export const getSessionUsers = (): string[] | null => {
   const users = sessionStorage.getItem(SESSION_STORAGE_USERS);
@@ -9,24 +15,11 @@ export const getSessionUsers = (): string[] | null => {
   return null;
 };
 
-export const removeDisconnected = ({
-  videoContainer,
-  userId,
-}: {
-  videoContainer: React.RefObject<HTMLDivElement>;
-  userId: string;
-}) => {
-  const { current } = videoContainer;
-  if (current) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { children }: any = current;
-    for (let i = 0; children[i]; i++) {
-      const child: HTMLDivElement = children[i];
-      if (child.getAttribute('id') === userId) {
-        current.removeChild(child);
-      }
-    }
-  }
+export const removeDisconnected = ({ userId }: { userId: string }) => {
+  store.dispatch({
+    type: 'deleted',
+    deleted: userId,
+  });
 };
 
 export const sendMessage = async ({
