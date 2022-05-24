@@ -59,22 +59,20 @@ const callToRoom = ({
 }) => {
   // If guest that call to room
   if (roomId !== userId) {
-    setTimeout(() => {
-      const call = peer.call(roomId, stream);
-      call.on('stream', (remoteStream) => {
-        // Runing twice anytime
-        addVideoStream({
-          stream: remoteStream,
-          id: roomId,
-        });
+    const call = peer.call(roomId, stream);
+    call.on('stream', (remoteStream) => {
+      // Runing twice anytime
+      addVideoStream({
+        stream: remoteStream,
+        id: roomId,
       });
-      call.on('close', () => {
-        console.log(1);
-        removeDisconnected({
-          userId: roomId,
-        });
+    });
+    call.on('close', () => {
+      console.log(1);
+      removeDisconnected({
+        userId: roomId,
       });
-    }, RENDER_DELAY);
+    });
   } else if (users.length) {
     // If room
     users.forEach((item) => {
@@ -320,10 +318,12 @@ export const loadRoom = ({
             break;
           case 'dropuser':
             users = value;
-            removeDisconnected({
-              userId: value[0],
-            });
-            console.log(6);
+            if (value[0] !== userId) {
+              removeDisconnected({
+                userId: value[0],
+              });
+            }
+            console.log(6, value[0]);
             break;
           default:
             Console.warn('Unresolved peer message', data);

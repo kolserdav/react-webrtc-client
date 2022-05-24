@@ -24,7 +24,7 @@ export const getRefs = (_streams: Video[]): VideoSource[] => {
     sources.push(_item);
   }
   return sources.sort((a, b) => {
-    if (a < b) {
+    if (parseInt(a.id, 10) < parseInt(b.id, 10)) {
       return -1;
     }
     return 1;
@@ -73,7 +73,7 @@ export const saveUsers = ({ users }: { users: string[] }): void => {
 export const getWidthOfItem = ({
   container,
 }: {
-  container: HTMLDivElement;
+  container: Element;
 }): { width: number; items: number } => {
   const {
     children: { length },

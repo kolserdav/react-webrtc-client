@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   getPeer,
@@ -10,6 +9,7 @@ import {
   store,
   Video,
   getRefs,
+  getWidthOfItem,
 } from '../../utils';
 import s from './Router.module.scss';
 
@@ -40,15 +40,19 @@ function Router({
   const location = { ..._location };
   location.pathname = location.pathname.replace(/^\//, '');
   const { pathname } = location;
-
+  const containerRef = useRef<HTMLDivElement>(null);
   const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
   const [streams, setStreams] = useState<Video[]>([]);
   const [started, setStarted] = useState<boolean>(false);
 
   const userId = useMemo(
-    () => (location.search === '' ? pathname || uuidv4() : sessionUser || _sessionUser || uuidv4()),
+    () =>
+      location.search === ''
+        ? pathname || new Date().getTime().toString()
+        : sessionUser || _sessionUser || new Date().getTime().toString(),
     []
   );
+  const cId = userId.replace(/^\d/, '');
 
   if (!sessionUser) {
     sessionStorage.setItem(SESSION_STORAGE_USER_ID, userId);
@@ -69,16 +73,22 @@ function Router({
         setStarted(false);
       }
       const { type, added, deleted } = store.getState();
+      let _streams: typeof streams = [];
       if (type === 'added' && added) {
         if (streams.filter((item) => item.id === added.id).length === 0) {
-          const _streams = streams.map((item) => item);
+          _streams = streams.map((item) => item);
           _streams.push(added);
           setStreams(_streams);
         }
       } else if (type === 'deleted' && deleted) {
-        const _streams = streams.filter((item) => item.id !== deleted);
+        _streams = streams.filter((item) => item.id !== deleted);
         setStreams(_streams);
       }
+      const { width, items } = getWidthOfItem({ container: document.body });
+      setParams({
+        width,
+        height: width,
+      });
     });
     return () => {
       clearSubs();
@@ -122,7 +132,7 @@ function Router({
         roomId: pathname,
       });
     }
-  }, [port, host, path, userId, pathname, started, debug, params, secure]);
+  }, [port, host, path, userId, pathname, started, debug, secure]);
 
   const connectLink = `${window.location.origin}/${userId}?guest=1`;
 
@@ -130,7 +140,7 @@ function Router({
 
   return (
     <div className={s.wrapper}>
-      <div className={s.container}>
+      <div className={s.container} id={cId}>
         {_streams.map((item) => (
           <video
             key={item.id}

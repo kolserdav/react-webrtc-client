@@ -9,7 +9,7 @@ interface Reducer {
   added?: Video;
   deleted?: string;
 }
-
+// Todo think about state
 function reducer(
   // eslint-disable-next-line default-param-last
   state: Reducer = { type: 'initial' },
