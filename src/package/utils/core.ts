@@ -6,10 +6,6 @@ import { sendMessage, removeDisconnected, saveUsers, getSessionUsers } from './l
 import { RENDER_DELAY } from './constants';
 import store from './store';
 
-/**
- * TODO rewrite to class
- */
-
 const _users = getSessionUsers();
 let users: string[] = _users || [];
 
@@ -73,7 +69,10 @@ const callToRoom = ({
         });
       });
       call.on('close', () => {
-        dropUser({ userId: roomId, peer });
+        console.log(1);
+        removeDisconnected({
+          userId: roomId,
+        });
       });
     }, RENDER_DELAY);
   } else if (users.length) {
@@ -90,7 +89,18 @@ const callToRoom = ({
             });
           });
           call.on('close', () => {
-            dropUser({ userId: item, peer });
+            if (roomId === userId && item !== userId) {
+              sendMessage({
+                type: 'dropuser',
+                peer,
+                value: [item],
+                id: item,
+              });
+            }
+            removeDisconnected({
+              userId: item,
+            });
+            console.log(2);
           });
         }, RENDER_DELAY);
       }
@@ -139,30 +149,37 @@ export const loadSelfStreamAndCallToRoom = ({
   roomId,
   userId,
   peer,
-  restart,
 }: {
   id: string;
   roomId: string;
   userId: string;
   peer: Peer;
-  restart?: boolean;
 }) => {
   // Load self stream
   navigator.mediaDevices
     .getUserMedia({ video: true, audio: true })
     .then((stream) => {
-      if (!restart) {
-        addVideoStream({
+      addVideoStream({
+        stream,
+        id,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const _peer: any = peer;
+      const cons = _peer._connections;
+      let check = true;
+      for (let i = 0; cons[i]; i++) {
+        if (cons[i] === roomId) {
+          check = false;
+        }
+      }
+      if (check) {
+        callToRoom({
           stream,
-          id,
+          peer,
+          roomId,
+          userId,
         });
       }
-      callToRoom({
-        stream,
-        peer,
-        roomId,
-        userId,
-      });
     })
     .catch((err) => {
       if (err.name === 'NotAllowedError') {
@@ -173,50 +190,24 @@ export const loadSelfStreamAndCallToRoom = ({
     });
 };
 
-const dropUser = ({ userId, peer }: { userId: string; peer: Peer }) => {
-  removeDisconnected({
-    userId,
-  });
+const removeOneUser = ({ userId }: { userId: string }) => {
   users.splice(users.indexOf(userId), 1);
   saveUsers({ users });
-  // Send to guests for drop disconnected
-  users.forEach((item) => {
-    sendMessage({
-      type: 'dropuser',
+};
+
+const connectWithAll = ({ list, peer, userId }: { list: string[]; peer: Peer; userId: string }) => {
+  list.forEach((item) => {
+    loadSelfStreamAndCallToRoom({
+      id: userId,
+      roomId: item,
       peer,
-      value: [userId],
-      id: item,
+      userId,
     });
   });
 };
 
-const connectWithAll = ({
-  users: list,
-  peer,
-  userId,
-}: {
-  users: string[];
-  peer: Peer;
-  userId: string;
-}) => {
-  list.forEach((item) => {
-    if (item !== userId) {
-      loadSelfStreamAndCallToRoom({
-        id: userId,
-        roomId: item,
-        peer,
-        restart: true,
-        userId,
-      });
-      sendMessage({
-        peer,
-        id: item,
-        value: [userId],
-        type: 'connect',
-      });
-    }
-  });
-};
+const getUniqueUser = ({ userId }: { userId: string }) =>
+  users.filter((item) => item === userId).length === 0;
 
 export const loadRoom = ({
   peer,
@@ -228,17 +219,6 @@ export const loadRoom = ({
   userId: string;
 }) => {
   peer.on('open', (id) => {
-    // Connect to room
-    if (roomId !== userId) {
-      sendMessage({
-        peer,
-        id: roomId,
-        value: [userId],
-        type: 'connect',
-      });
-    } else {
-      connectWithAll({ peer, userId, users });
-    }
     // Listen incoming call
     peer.on('call', (call) => {
       navigator.mediaDevices
@@ -253,7 +233,22 @@ export const loadRoom = ({
             });
           });
           call.on('disconnect', () => {
-            dropUser({ peer, userId: call.peer });
+            if (roomId === userId) {
+              users.forEach((item) => {
+                if (call.peer !== item) {
+                  sendMessage({
+                    type: 'dropuser',
+                    peer,
+                    value: [call.peer],
+                    id: item,
+                  });
+                  removeDisconnected({
+                    userId: call.peer,
+                  });
+                  console.log(4);
+                }
+              });
+            }
           });
         })
         .catch((err) => {
@@ -268,47 +263,67 @@ export const loadRoom = ({
     peer.on('connection', (conn) => {
       const guestId = conn.peer;
 
-      const userIsNew = users.filter((item) => item === guestId).length === 0;
-      if (userIsNew) {
+      if (getUniqueUser({ userId: guestId })) {
         users.push(guestId);
         saveUsers({ users });
       }
 
       // Guest disconnected
       conn.on('close', () => {
-        dropUser({ userId: guestId, peer });
+        if (roomId === userId) {
+          users.forEach((item) => {
+            if (item !== userId) {
+              sendMessage({
+                type: 'dropuser',
+                peer,
+                value: [guestId],
+                id: item,
+              });
+              removeDisconnected({
+                userId: guestId,
+              });
+              console.log(5);
+            }
+          });
+        }
       });
       // Listen room answer
       const _id = conn.peer;
-      let diff: string[] = [];
       conn.on('data', (data) => {
         const { value } = data as { value: string[] };
         switch (data.type) {
           case 'connect':
+            if (getUniqueUser({ userId: roomId })) {
+              users.push(roomId);
+              saveUsers({ users });
+            }
             users.forEach((item) => {
-              sendMessage({
-                peer,
-                type: 'onconnect',
-                value: users,
-                id: _id,
-              });
+              if (item !== roomId && userId !== item) {
+                sendMessage({
+                  peer,
+                  type: 'onconnect',
+                  value: users,
+                  id: _id,
+                });
+              }
             });
             break;
           case 'onconnect':
             // Call from new guest to other guests
-            diff = value.filter((x) => users.includes(x));
             connectWithAll({
               peer,
               userId,
-              users: roomId !== userId ? value : diff,
+              list: value,
             });
             users = value;
             saveUsers({ users });
             break;
           case 'dropuser':
+            users = value;
             removeDisconnected({
               userId: value[0],
             });
+            console.log(6);
             break;
           default:
             Console.warn('Unresolved peer message', data);
@@ -318,12 +333,27 @@ export const loadRoom = ({
       });
       Console.info('Event', { type: 'connection', value: conn });
     });
-    loadSelfStreamAndCallToRoom({
-      id: userId,
-      roomId,
-      peer,
-      userId,
-    });
+    // Connect to room
+    if (roomId !== userId) {
+      users = [];
+      sendMessage({
+        peer,
+        id: roomId,
+        value: [userId],
+        type: 'connect',
+      });
+    } else {
+      if (getUniqueUser({ userId })) {
+        users.push(userId);
+        saveUsers({ users });
+      }
+      if (users.length === 0) {
+        loadSelfStreamAndCallToRoom({ id, roomId, userId, peer });
+      }
+      users.forEach((item) => {
+        connectWithAll({ peer, list: users, userId });
+      });
+    }
   });
   peer.on('error', (err) => {
     Console.error('Error', err);
