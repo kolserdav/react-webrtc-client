@@ -41,6 +41,15 @@ export const sendMessage = async ({
   });
 };
 
-export const saveUsers = (users: string[]): void => {
+export const saveUsers = ({
+  users,
+  onchangeUserList,
+}: {
+  users: string[];
+  onchangeUserList?: (list: string[]) => void;
+}): void => {
+  if (onchangeUserList) {
+    onchangeUserList(users);
+  }
   sessionStorage.setItem(SESSION_STORAGE_USERS, JSON.stringify(users));
 };

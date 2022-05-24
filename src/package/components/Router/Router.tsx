@@ -111,7 +111,9 @@ function Router({
         width: params.width,
         height: params.height,
         videoClassName: s.video,
-        nameClassName: s.video__name,
+        onchangeUserList: (users) => {
+          console.log(users);
+        },
       });
     }
     return () => {
@@ -123,14 +125,14 @@ function Router({
 
   return (
     <div className={s.wrapper}>
-      {pathname === userId && (
-        <a className={s.room__link} target="_blank" href={connectLink} rel="noreferrer">
-          {connectLink}
-        </a>
-      )}
       <div className={s.container}>
         <div className={s.container__item} ref={videoContainer} />
         <div className={s.container__item} ref={videoContainerSelf} />
+      </div>
+      <div className={s.actions}>
+        <a className={s.room__link} target="_blank" href={connectLink} rel="noreferrer">
+          {connectLink}
+        </a>
       </div>
     </div>
   );

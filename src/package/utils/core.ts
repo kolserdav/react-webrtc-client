@@ -47,14 +47,12 @@ const renderVideo = ({
   self,
   videoContainer,
   videoClassName,
-  nameClassName,
 }: {
   video: HTMLVideoElement;
   id: string;
   videoContainer: React.RefObject<HTMLDivElement>;
   self?: boolean;
   videoClassName?: string;
-  nameClassName: string;
 }): void => {
   const div = document.createElement('div');
   div.setAttribute('id', id);
@@ -62,15 +60,9 @@ const renderVideo = ({
   if (self) {
     div.classList.add(s.call__self__video);
   }
-  const title = document.createElement('p');
-  title.innerHTML = id;
-  if (nameClassName) {
-    title.classList.add(nameClassName);
-  }
   if (videoClassName) {
     div.classList.add(videoClassName);
   }
-  div.append(title);
   div.append(video);
   videoContainer.current?.append(div);
   video.play();
@@ -85,7 +77,6 @@ export const addVideoStream = ({
   width,
   height,
   videoClassName,
-  nameClassName,
 }: {
   peer: Peer;
   stream: MediaStream;
@@ -95,7 +86,6 @@ export const addVideoStream = ({
   height?: number;
   self?: boolean;
   videoClassName?: string;
-  nameClassName: string;
 }): void => {
   const video = document.createElement('video');
   const localStream = stream;
@@ -123,31 +113,29 @@ export const addVideoStream = ({
           match = true;
         }
       }
-    }
-    if (!match) {
-      // Once video guarantee
-      renderVideo({
-        video,
-        videoContainer,
-        videoClassName,
-        nameClassName,
-        self,
-        id,
-      });
-    } else {
-      // Old video reload
-      removeDisconnected({
-        videoContainer,
-        userId: id,
-      });
-      renderVideo({
-        video,
-        videoContainer,
-        videoClassName,
-        nameClassName,
-        self,
-        id,
-      });
+      if (!match) {
+        // Once video guarantee
+        renderVideo({
+          video,
+          videoContainer,
+          videoClassName,
+          self,
+          id,
+        });
+      } else {
+        // Old video reload
+        removeDisconnected({
+          videoContainer,
+          userId: id,
+        });
+        renderVideo({
+          video,
+          videoContainer,
+          videoClassName,
+          self,
+          id,
+        });
+      }
     }
   });
 };
@@ -161,7 +149,7 @@ const callToRoom = ({
   width,
   height,
   videoClassName,
-  nameClassName,
+  onchangeUserList,
 }: {
   stream: MediaStream;
   videoContainer: React.RefObject<HTMLDivElement>;
@@ -171,7 +159,7 @@ const callToRoom = ({
   width?: number;
   height?: number;
   videoClassName?: string;
-  nameClassName: string;
+  onchangeUserList?: (list: string[]) => void;
 }) => {
   // If guest that call to room
   if (roomId !== userId) {
@@ -186,12 +174,11 @@ const callToRoom = ({
           width,
           height,
           videoClassName,
-          nameClassName,
           peer,
         });
       });
       call.on('close', () => {
-        dropUser({ videoContainer, userId: roomId, peer });
+        dropUser({ videoContainer, userId: roomId, peer, onchangeUserList });
       });
     }, RENDER_DELAY);
   } else if (users.length) {
@@ -209,12 +196,11 @@ const callToRoom = ({
               width,
               height,
               videoClassName,
-              nameClassName,
               peer,
             });
           });
           call.on('close', () => {
-            dropUser({ videoContainer, userId: item, peer });
+            dropUser({ videoContainer, userId: item, peer, onchangeUserList });
           });
         }, RENDER_DELAY);
       }
@@ -233,7 +219,7 @@ export const loadSelfStreamAndCallToRoom = ({
   height,
   restart,
   videoClassName,
-  nameClassName,
+  onchangeUserList,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
@@ -245,7 +231,7 @@ export const loadSelfStreamAndCallToRoom = ({
   height?: number;
   restart?: boolean;
   videoClassName?: string;
-  nameClassName: string;
+  onchangeUserList?: (list: string[]) => void;
 }) => {
   // Load self stream
   navigator.mediaDevices
@@ -256,11 +242,10 @@ export const loadSelfStreamAndCallToRoom = ({
           stream,
           id,
           self: true,
-          videoContainer: videoContainerSelf,
+          videoContainer,
           width,
           height,
           videoClassName,
-          nameClassName,
           peer,
         });
       }
@@ -273,7 +258,7 @@ export const loadSelfStreamAndCallToRoom = ({
         userId,
         height,
         videoClassName,
-        nameClassName,
+        onchangeUserList,
       });
       Console.info('Event', { type: 'loadvideo', value: stream });
     })
@@ -290,17 +275,19 @@ const dropUser = ({
   videoContainer,
   userId,
   peer,
+  onchangeUserList,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
   userId: string;
   peer: Peer;
+  onchangeUserList?: (list: string[]) => void;
 }) => {
   removeDisconnected({
     videoContainer,
     userId,
   });
   users.splice(users.indexOf(userId), 1);
-  saveUsers(users);
+  saveUsers({ users, onchangeUserList });
   // Send to guests for drop disconnected
   users.forEach((item) => {
     sendMessage({
@@ -321,7 +308,7 @@ export const loadRoom = ({
   width,
   height,
   videoClassName,
-  nameClassName,
+  onchangeUserList,
 }: {
   videoContainer: React.RefObject<HTMLDivElement>;
   videoContainerSelf: React.RefObject<HTMLDivElement>;
@@ -331,7 +318,7 @@ export const loadRoom = ({
   width?: number;
   height?: number;
   videoClassName?: string;
-  nameClassName: string;
+  onchangeUserList?: (list: string[]) => void;
 }) => {
   peer.on('open', (id) => {
     // Connect to room
@@ -344,12 +331,14 @@ export const loadRoom = ({
       });
     }
     users.forEach((item) => {
-      sendMessage({
-        peer,
-        id: item,
-        value: [userId],
-        type: 'connect',
-      });
+      if (item !== userId) {
+        sendMessage({
+          peer,
+          id: item,
+          value: [userId],
+          type: 'connect',
+        });
+      }
     });
     // Listen incoming call
     peer.on('call', (call) => {
@@ -366,9 +355,11 @@ export const loadRoom = ({
               width,
               height,
               videoClassName,
-              nameClassName,
               peer,
             });
+          });
+          call.on('disconnect', () => {
+            dropUser({ videoContainer, peer, userId: call.peer, onchangeUserList });
           });
         })
         .catch((err) => {
@@ -383,18 +374,15 @@ export const loadRoom = ({
     peer.on('connection', (conn) => {
       const guestId = conn.peer;
 
-      if (roomId === userId) {
-        const userIsNew = users.filter((item) => item === guestId).length === 0;
-        if (userIsNew) {
-          users.push(guestId);
-          saveUsers(users);
-        }
+      const userIsNew = users.filter((item) => item === guestId).length === 0;
+      if (userIsNew) {
+        users.push(guestId);
+        saveUsers({ users, onchangeUserList });
       }
 
       // Guest disconnected
       conn.on('close', () => {
-        dropUser({ videoContainer, userId: guestId, peer });
-        Console.info('Event', { type: 'close', value: guestId });
+        dropUser({ videoContainer, userId: guestId, peer, onchangeUserList });
       });
       // Listen room answer
       const _id = conn.peer;
@@ -429,14 +417,14 @@ export const loadRoom = ({
                   width,
                   height,
                   videoClassName,
-                  nameClassName,
                   restart: true,
                   userId,
+                  onchangeUserList,
                 });
               }
             });
             users = value;
-            saveUsers(users);
+            saveUsers({ users, onchangeUserList });
             break;
           case 'dropuser':
             removeDisconnected({
@@ -461,12 +449,9 @@ export const loadRoom = ({
       width,
       height,
       videoClassName,
-      nameClassName,
       userId,
+      onchangeUserList,
     });
-  });
-  peer.on('disconnected', (id) => {
-    console.log('disconnected', id);
   });
   peer.on('error', (err) => {
     Console.error('Error', err);
@@ -474,7 +459,7 @@ export const loadRoom = ({
       if (err.message.indexOf(item)) {
         removeDisconnected({ videoContainer, userId: item });
         users.splice(users.indexOf(item), 1);
-        saveUsers(users);
+        saveUsers({ users, onchangeUserList });
       }
     });
     Console.error('Error 322:', err);
