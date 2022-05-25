@@ -58,12 +58,15 @@ export const sendMessage = async ({
   type: 'connect' | 'onconnect' | 'dropuser';
 }): Promise<1 | 0> => {
   const connection = peer.connect(id);
-  return new Promise((resolve) => {
-    connection.on('open', () => {
-      connection.send({ type, value });
-      resolve(0);
+  if (connection) {
+    return new Promise((resolve) => {
+      connection.on('open', () => {
+        connection.send({ type, value });
+        resolve(0);
+      });
     });
-  });
+  }
+  return 1;
 };
 
 export const saveUsers = ({ users }: { users: string[] }): void => {

@@ -1,2 +1,2 @@
-// eslint-disable-next-line import/no-relative-packages
-export * from '../../../peerjs';
+export * from '../peerjs/peer';
+export * from '../peerjs/util';

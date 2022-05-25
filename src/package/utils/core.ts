@@ -60,46 +60,54 @@ const callToRoom = ({
   // If guest that call to room
   if (roomId !== userId) {
     const call = peer.call(roomId, stream);
-    call.on('stream', (remoteStream) => {
-      // Runing twice anytime
-      addVideoStream({
-        stream: remoteStream,
-        id: roomId,
+    if (call) {
+      call.on('stream', (remoteStream) => {
+        // Runing twice anytime
+        addVideoStream({
+          stream: remoteStream,
+          id: roomId,
+        });
       });
-    });
-    call.on('close', () => {
-      console.log(1);
-      removeDisconnected({
-        userId: roomId,
+      call.on('close', () => {
+        console.log(1);
+        removeDisconnected({
+          userId: roomId,
+        });
       });
-    });
+    } else {
+      Console.error('Call is null: 78');
+    }
   } else if (users.length) {
     // If room
     users.forEach((item) => {
       if (userId !== item && item !== roomId) {
         setTimeout(() => {
           const call = peer.call(item, stream);
-          call.on('stream', (remoteStream) => {
-            // Runing twice anytime
-            addVideoStream({
-              stream: remoteStream,
-              id: item,
-            });
-          });
-          call.on('close', () => {
-            if (roomId === userId && item !== userId) {
-              sendMessage({
-                type: 'dropuser',
-                peer,
-                value: [item],
+          if (call) {
+            call.on('stream', (remoteStream) => {
+              // Runing twice anytime
+              addVideoStream({
+                stream: remoteStream,
                 id: item,
               });
-            }
-            removeDisconnected({
-              userId: item,
             });
-            console.log(2);
-          });
+            call.on('close', () => {
+              if (roomId === userId && item !== userId) {
+                sendMessage({
+                  type: 'dropuser',
+                  peer,
+                  value: [item],
+                  id: item,
+                });
+              }
+              removeDisconnected({
+                userId: item,
+              });
+              console.log(2);
+            });
+          } else {
+            Console.error('Call is null: 109');
+          }
         }, RENDER_DELAY);
       }
     });
