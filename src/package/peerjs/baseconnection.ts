@@ -3,10 +3,12 @@ import { Peer } from "./peer";
 import { ServerMessage } from "./servermessage";
 import { ConnectionType } from "./enums";
 
+// eslint-disable-next-line import/prefer-default-export
 export abstract class BaseConnection extends EventEmitter {
 	protected _open = false;
 
 	readonly metadata: any;
+
 	connectionId = '';
 
 	peerConnection: RTCPeerConnection | null = null;

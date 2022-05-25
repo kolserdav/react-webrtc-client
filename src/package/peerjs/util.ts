@@ -1,5 +1,6 @@
 // Types aren’t accurate
-//@ts-ignore
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import BinaryPack from "peerjs-js-binarypack";
 import { Supports } from "./supports";
 
@@ -18,19 +19,23 @@ const DEFAULT_CONFIG = {
 };
 
 class Util {
-	noop(): void {}
+	// eslint-disable-next-line class-methods-use-this
+	noop(): void {/** */}
 
 	readonly CLOUD_HOST = "/";
+
 	readonly CLOUD_PORT = 443;
 
 	// Browsers that need chunking:
 	readonly chunkedBrowsers = { Chrome: 1, chrome: 1 };
+
 	readonly chunkedMTU = 16300; // The original 60000 bytes setting does not work when sending data from Firefox to Chrome, which is "cut off" after 16384 bytes and delivered individually.
 
 	// Returns browser-agnostic default config
 	readonly defaultConfig = DEFAULT_CONFIG;
 
 	readonly browser = Supports.getBrowser();
+
 	readonly browserVersion = Supports.getVersion();
 
 	// Lists which features are supported
@@ -64,14 +69,16 @@ class Util {
 				try {
 					dc.binaryType = "blob";
 					supported.binaryBlob = !Supports.isIOS;
-				} catch (e) {}
+				} catch (e) {/** */}
 			} catch (e) {
+				/** */
 			} finally {
 				if (dc) {
 					dc.close();
 				}
 			}
 		} catch (e) {
+			/** */
 		} finally {
 			if (pc) {
 				pc.close();
@@ -82,23 +89,25 @@ class Util {
 	})();
 
 	// Ensure alphanumeric ids
+	// eslint-disable-next-line class-methods-use-this
 	validateId(id: string): boolean {
 		// Allow empty ids
 		return !id || /^[A-Za-z0-9]+(?:[ _-][A-Za-z0-9]+)*$/.test(id);
 	}
 
 	pack = BinaryPack.pack;
+
 	unpack = BinaryPack.unpack;
 
 	// Binary stuff
 
-	private _dataCount: number = 1;
+	private _dataCount = 1;
 
 	chunk(
 		blob: Blob,
 	): { __peerData: number; n: number; total: number; data: Blob }[] {
 		const chunks = [];
-		const size = blob.size;
+		const {size} = blob;
 		const total = Math.ceil(size / util.chunkedMTU);
 
 		let index = 0;
@@ -126,6 +135,7 @@ class Util {
 		return chunks;
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	blobToArrayBuffer(
 		blob: Blob,
 		cb: (arg: ArrayBuffer | null) => void,
@@ -143,21 +153,26 @@ class Util {
 		return fr;
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	binaryStringToArrayBuffer(binary: string): ArrayBuffer | SharedArrayBuffer {
 		const byteArray = new Uint8Array(binary.length);
 
 		for (let i = 0; i < binary.length; i++) {
+			// eslint-disable-next-line no-bitwise
 			byteArray[i] = binary.charCodeAt(i) & 0xff;
 		}
 
 		return byteArray.buffer;
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	randomToken(): string {
 		return Math.random().toString(36).slice(2);
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	isSecure(): boolean {
+		// eslint-disable-next-line no-restricted-globals
 		return location.protocol === "https:";
 	}
 }

@@ -16,24 +16,35 @@ import type { DataConnection as IDataConnection } from "./dataconnection";
 /**
  * Wraps a DataChannel between two Peers.
  */
+// eslint-disable-next-line import/prefer-default-export
 export class DataConnection extends BaseConnection implements IDataConnection {
 	private static readonly ID_PREFIX = "dc_";
+
 	private static readonly MAX_BUFFERED_AMOUNT = 8 * 1024 * 1024;
 
 	private _negotiator: Negotiator | null;
+
 	readonly label: string;
+
 	readonly serialization: SerializationType;
+
 	readonly reliable: boolean;
+
 	stringify: (data: any) => string = JSON.stringify;
+
 	parse: (data: string) => any = JSON.parse;
 
+	// eslint-disable-next-line class-methods-use-this
 	get type() {
 		return ConnectionType.Data;
 	}
 
 	private _buffer: any[] = [];
+
 	private _bufferSize = 0;
+
 	private _buffering = false;
+
 	private _chunkedData: {
 		[id: number]: {
 			data: Blob[];
@@ -43,6 +54,7 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 	} = {};
 
 	private _dc: RTCDataChannel | null = null;
+
 	private _encodingQueue: EncodingQueue | null = new EncodingQueue();
 
 	get dataChannel(): RTCDataChannel | null {
@@ -150,7 +162,7 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 					}
 				});
 				return;
-			} else if (datatype === ArrayBuffer) {
+			} if (datatype === ArrayBuffer) {
 				deserializedData = util.unpack(data as ArrayBuffer);
 			} else if (datatype === String) {
 				// String fallback for binary data for browsers that don't support binary yet
@@ -193,8 +205,8 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 			delete this._chunkedData[id];
 
 			// We've received all the chunks--time to construct the complete data.
-			const data = new Blob(chunkInfo.data);
-			this._handleDataMessage({ data });
+			const _data = new Blob(chunkInfo.data);
+			this._handleDataMessage({ data: _data });
 		}
 	}
 
@@ -347,13 +359,13 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 		const blobs = util.chunk(blob);
 		logger.log(`DC#${this.connectionId} Try to send ${blobs.length} chunks...`);
 
-		for (let blob of blobs) {
-			this.send(blob, true);
+		for (const _blob of blobs) {
+			this.send(_blob, true);
 		}
 	}
 
 	handleMessage(message: ServerMessage): 1 | 0 {
-		const payload = message.payload;
+		const {payload} = message;
 		if (!this._negotiator) {
 			logger.warn('Negotiator is', this._negotiator);
 			return 1;

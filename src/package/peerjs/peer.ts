@@ -1,3 +1,7 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable import/prefer-default-export */
+/* eslint-disable max-classes-per-file */
 import { EventEmitter } from "eventemitter3";
 import { util } from "./util";
 import logger, { LogLevel } from "./logger";
@@ -21,15 +25,25 @@ import type {
 
 class PeerOptions implements PeerJSOption {
 	debug?: LogLevel; // 1: Errors, 2: Warnings, 3: All logs
+
 	host?: string;
+
 	port?: number;
+
 	path?: string;
+
 	key?: string;
+
 	token?: string;
+
 	config?: any;
+
 	secure?: boolean;
+
 	pingInterval?: number;
+
 	referrerPolicy?: ReferrerPolicy;
+
 	logFunction?: (logLevel: LogLevel, ...rest: any[]) => void;
 }
 
@@ -66,18 +80,26 @@ export class Peer extends EventEmitter<PeerEvents> {
 	private static readonly DEFAULT_KEY = "peerjs";
 
 	private readonly _options: PeerOptions;
+
 	private readonly _api: API;
+
 	private readonly _socket: Socket;
 
 	private _id: string | null = null;
+
 	private _lastServerId: string | null = null;
 
 	// States.
 	private _destroyed = false; // Connections have been killed
+
 	private _disconnected = false; // Connection to PeerServer killed but P2P connections still active
+
 	private _open = false; // Sockets and such are not yet open.
+
 	private readonly _connections: Map<string, BaseConnection[]> = new Map(); // All connections for this peer.
+
 	private readonly _lostMessages: Map<string, ServerMessage[]> = new Map(); // src => [list of messages]
+
 	/**
 	 * The brokering ID of this peer
 	 */
@@ -105,7 +127,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 	get connections(): Object {
 		const plainConnections = Object.create(null);
 
-		for (let [k, v] of this._connections) {
+		for (const [k, v] of this._connections) {
 			plainConnections[k] = v;
 		}
 
@@ -118,6 +140,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 	get destroyed() {
 		return this._destroyed;
 	}
+
 	/**
 	 * false if there is an active connection to the PeerServer.
 	 */
@@ -178,7 +201,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 		// Set path correctly.
 		if (this._options.path) {
 			if (this._options.path[0] !== "/") {
-				this._options.path = "/" + this._options.path;
+				this._options.path = `/${  this._options.path}`;
 			}
 			if (this._options.path[this._options.path.length - 1] !== "/") {
 				this._options.path += "/";
@@ -225,7 +248,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 		} else {
 			this._api
 				.retrieveId()
-				.then((id) => this._initialize(id))
+				.then((_id) => this._initialize(_id))
 				.catch((error) => this._abort(PeerErrorType.ServerError, error));
 		}
 	}
@@ -279,8 +302,8 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 	/** Handles messages from the server. */
 	private _handleMessage(message: ServerMessage): void {
-		const type = message.type;
-		const payload = message.payload;
+		const {type} = message;
+		const {payload} = message;
 		const peerId = message.src;
 
 		switch (type) {
@@ -314,7 +337,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 				break;
 			case ServerMessageType.Offer: {
 				// we should consider switching this to CALL/CONNECT, but this is the least breaking option.
-				const connectionId = payload.connectionId;
+				const {connectionId} = payload;
 				let connection = this.getConnection(peerId, connectionId);
 
 				if (connection) {
@@ -327,7 +350,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 				// Create a new connection.
 				if (payload.type === ConnectionType.Media) {
 					const mediaConnection = new MediaConnection(peerId, this, {
-						connectionId: connectionId,
+						connectionId,
 						_payload: payload,
 						metadata: payload.metadata,
 					});
@@ -336,7 +359,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 					this.emit("call", mediaConnection);
 				} else if (payload.type === ConnectionType.Data) {
 					const dataConnection = new DataConnection(peerId, this, {
-						connectionId: connectionId,
+						connectionId,
 						_payload: payload,
 						metadata: payload.metadata,
 						label: payload.label,
@@ -353,8 +376,8 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 				// Find messages.
 				const messages = this._getMessages(connectionId);
-				for (let message of messages) {
-					connection.handleMessage(message);
+				for (const _message of messages) {
+					connection.handleMessage(_message);
 				}
 
 				break;
@@ -367,7 +390,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 					return;
 				}
 
-				const connectionId = payload.connectionId;
+				const {connectionId} = payload;
 				const connection = this.getConnection(peerId, connectionId);
 
 				if (connection && connection.peerConnection) {
@@ -394,7 +417,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 	}
 
 	/** Retrieve messages from lost message store */
-	//TODO Change it to private
+	// TODO Change it to private
 	public _getMessages(connectionId: string): ServerMessage[] {
 		const messages = this._lostMessages.get(connectionId);
 
@@ -482,7 +505,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 		this._connections.get(peerId)?.push(connection);
 	}
 
-	//TODO should be private
+	// TODO should be private
 	_removeConnection(connection: BaseConnection): void {
 		const connections = this._connections.get(connection.peer);
 
@@ -494,7 +517,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 			}
 		}
 
-		//remove from lost messages
+		// remove from lost messages
 		this._lostMessages.delete(connection.connectionId);
 	}
 
@@ -505,7 +528,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 			return null;
 		}
 
-		for (let connection of connections) {
+		for (const connection of connections) {
 			if (connection.connectionId === connectionId) {
 				return connection;
 			}
@@ -577,7 +600,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 	/** Disconnects every connection on this peer. */
 	private _cleanup(): void {
-		for (let peerId of this._connections.keys()) {
+		for (const peerId of this._connections.keys()) {
 			this._cleanupPeer(peerId);
 			this._connections.delete(peerId);
 		}
@@ -591,7 +614,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 		if (!connections) return;
 
-		for (let connection of connections) {
+		for (const connection of connections) {
 			connection.close();
 		}
 	}
@@ -652,7 +675,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 	 * the cloud server, email team@peerjs.com to get the functionality enabled for
 	 * your key.
 	 */
-	listAllPeers(cb = (_: any[]) => {}): void {
+	listAllPeers(cb = (_: any[]) => {/** */}): void {
 		this._api
 			.listAllPeers()
 			.then((peers) => cb(peers))

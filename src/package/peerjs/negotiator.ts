@@ -1,3 +1,6 @@
+/* eslint-disable camelcase */
+/* eslint-disable no-multi-assign */
+/* eslint-disable no-param-reassign */
 import { util } from "./util";
 import logger from "./logger";
 import { MediaConnection } from "./mediaconnection";
@@ -13,6 +16,7 @@ import { BaseConnection } from "./baseconnection";
 /**
  * Manages all negotiations between Peers.
  */
+// eslint-disable-next-line import/prefer-default-export
 export class Negotiator {
 	constructor(readonly connection: BaseConnection) {}
 
@@ -70,6 +74,7 @@ export class Negotiator {
 		// ICE CANDIDATES.
 		logger.log("Listening for ICE candidates.");
 
+		// eslint-disable-next-line no-param-reassign
 		peerConnection.onicecandidate = (evt) => {
 			if (!evt.candidate || !evt.candidate.candidate) return;
 
@@ -90,6 +95,7 @@ export class Negotiator {
 			}
 		};
 
+		// eslint-disable-next-line no-param-reassign
 		peerConnection.oniceconnectionstatechange = () => {
 			switch (peerConnection.iceConnectionState) {
 				case "failed":
@@ -119,6 +125,7 @@ export class Negotiator {
 					);
 					break;
 				case "completed":
+					// eslint-disable-next-line no-param-reassign
 					peerConnection.onicecandidate = util.noop;
 					break;
 			}
@@ -188,7 +195,7 @@ export class Negotiator {
 			peerConnection.oniceconnectionstatechange =
 			peerConnection.ondatachannel =
 			peerConnection.ontrack =
-				() => {};
+				() => {/** */};
 
 		const peerConnectionNotClosed = peerConnection.signalingState !== "closed";
 		let dataChannelNotClosed = false;
@@ -345,6 +352,7 @@ export class Negotiator {
 
 		logger.log("Setting remote description", sdp);
 
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const self = this;
 
 		if (!peerConnection) {
@@ -404,6 +412,7 @@ export class Negotiator {
 		return 0;
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	private _addTracksToConnection(
 		stream: MediaStream,
 		peerConnection: RTCPeerConnection,
@@ -411,7 +420,7 @@ export class Negotiator {
 		logger.log(`add tracks from stream ${stream.id} to peer connection`);
 
 		if (!peerConnection.addTrack) {
-			return logger.error(
+			logger.error(
 				`Your browser does't support RTCPeerConnection#addTrack. Ignored.`,
 			);
 		}
@@ -421,6 +430,7 @@ export class Negotiator {
 		});
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	private _addStreamToMediaConnection(
 		stream: MediaStream,
 		mediaConnection: MediaConnection,

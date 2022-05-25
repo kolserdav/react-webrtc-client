@@ -2,6 +2,7 @@ import { util } from "./util";
 import logger from "./logger";
 import { PeerJSOption } from "./optionInterfaces";
 
+// eslint-disable-next-line import/prefer-default-export
 export class API {
 	constructor(private readonly _options: PeerJSOption) {}
 
@@ -41,6 +42,7 @@ export class API {
 					"Peer.";
 			}
 
+			// eslint-disable-next-line prefer-template
 			throw new Error("Could not get an ID from the server." + pathError);
 		}
 	}
@@ -65,6 +67,7 @@ export class API {
 					}
 
 					throw new Error(
+						// eslint-disable-next-line prefer-template
 						"It doesn't look like you have permission to list peers IDs. " +
 							helpfulError,
 					);
@@ -77,6 +80,7 @@ export class API {
 		} catch (error) {
 			logger.error("Error retrieving list peers", error);
 
+			// eslint-disable-next-line prefer-template
 			throw new Error("Could not get list peers from the server." + error);
 		}
 	}

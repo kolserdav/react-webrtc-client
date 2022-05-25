@@ -1,3 +1,4 @@
+/* eslint-disable no-multi-assign */
 import { EventEmitter } from "eventemitter3";
 import logger from "./logger";
 import { SocketEventType, ServerMessageType } from "./enums";
@@ -6,12 +7,18 @@ import { SocketEventType, ServerMessageType } from "./enums";
  * An abstraction on top of WebSockets to provide fastest
  * possible connection for peers.
  */
+// eslint-disable-next-line import/prefer-default-export
 export class Socket extends EventEmitter {
-	private _disconnected: boolean = true;
+	private _disconnected = true;
+
 	private _id?: string;
+
 	private _messagesQueue: Array<object> = [];
+
 	private _socket?: WebSocket;
+
 	private _wsPingTimer?: any;
+
 	private readonly _baseUrl: string;
 
 	constructor(
@@ -26,7 +33,7 @@ export class Socket extends EventEmitter {
 
 		const wsProtocol = secure ? "wss://" : "ws://";
 
-		this._baseUrl = wsProtocol + host + ":" + port + path + "peerjs?key=" + key;
+		this._baseUrl = `${wsProtocol + host  }:${  port  }${path  }peerjs?key=${  key}`;
 	}
 
 	start(id: string, token: string): void {
@@ -38,7 +45,7 @@ export class Socket extends EventEmitter {
 			return;
 		}
 
-		this._socket = new WebSocket(wsUrl + "&version=2");
+		this._socket = new WebSocket(`${wsUrl  }&version=2`);
 		this._disconnected = false;
 
 		this._socket.onmessage = (event) => {
@@ -109,8 +116,8 @@ export class Socket extends EventEmitter {
 
 	/** Send queued messages. */
 	private _sendQueuedMessages(): void {
-		//Create copy of queue and clear it,
-		//because send method push the message back to queue if smth will go wrong
+		// Create copy of queue and clear it,
+		// because send method push the message back to queue if smth will go wrong
 		const copiedQueue = [...this._messagesQueue];
 		this._messagesQueue = [];
 

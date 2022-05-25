@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 const LOG_PREFIX = "PeerJS: ";
 
 /*
@@ -47,11 +48,13 @@ class Logger {
 		this._print = fn;
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	private _print(logLevel: LogLevel, ...rest: any[]): void {
 		const copy = [LOG_PREFIX, ...rest];
 
-		for (let i in copy) {
+		for (const i in copy) {
 			if (copy[i] instanceof Error) {
+				// eslint-disable-next-line prefer-template
 				copy[i] = "(" + copy[i].name + ") " + copy[i].message;
 			}
 		}

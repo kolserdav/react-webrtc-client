@@ -1,11 +1,13 @@
 import { EventEmitter } from "eventemitter3";
 import logger from "./logger";
 
+// eslint-disable-next-line import/prefer-default-export
 export class EncodingQueue extends EventEmitter {
 	readonly fileReader: FileReader = new FileReader();
 
 	private _queue: Blob[] = [];
-	private _processing: boolean = false;
+
+	private _processing = false;
 
 	constructor() {
 		super();

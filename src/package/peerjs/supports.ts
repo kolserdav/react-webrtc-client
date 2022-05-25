@@ -1,17 +1,24 @@
+/* eslint-disable camelcase */
 import webRTCAdapter_import from "webrtc-adapter";
 
 const webRTCAdapter: typeof webRTCAdapter_import =
-	//@ts-ignore
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	// @ts-ignore
 	webRTCAdapter_import.default || webRTCAdapter_import;
 
+// eslint-disable-next-line import/prefer-default-export
 export const Supports = new (class {
 	readonly isIOS = ["iPad", "iPhone", "iPod"].includes(navigator.platform);
+
 	readonly supportedBrowsers = ["firefox", "chrome", "safari"];
 
 	readonly minFirefoxVersion = 59;
+
 	readonly minChromeVersion = 72;
+
 	readonly minSafariVersion = 605;
 
+	// eslint-disable-next-line class-methods-use-this
 	isWebRTCSupported(): boolean {
 		return typeof RTCPeerConnection !== "undefined";
 	}
@@ -32,10 +39,12 @@ export const Supports = new (class {
 		return false;
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	getBrowser(): string {
 		return webRTCAdapter.browserDetails.browser;
 	}
 
+	// eslint-disable-next-line class-methods-use-this
 	getVersion(): number {
 		return webRTCAdapter.browserDetails.version || 0;
 	}
@@ -60,6 +69,7 @@ export const Supports = new (class {
 			tempPc.addTransceiver("audio");
 			supported = true;
 		} catch (e) {
+			/** */
 		} finally {
 			if (tempPc) {
 				tempPc.close();

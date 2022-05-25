@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 export enum ConnectionEventType {
 	Open = "open",
 	Stream = "stream",

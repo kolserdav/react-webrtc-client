@@ -1,4 +1,5 @@
 export interface AnswerOption {
+	// eslint-disable-next-line @typescript-eslint/ban-types
 	sdpTransform?: Function;
 }
 
@@ -23,5 +24,6 @@ export interface PeerConnectOption {
 
 export interface CallOption {
 	metadata?: any;
+	// eslint-disable-next-line @typescript-eslint/ban-types
 	sdpTransform?: Function;
 }
