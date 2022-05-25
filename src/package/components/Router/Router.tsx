@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   getPeer,
@@ -40,7 +40,6 @@ function Router({
   const location = { ..._location };
   location.pathname = location.pathname.replace(/^\//, '');
   const { pathname } = location;
-  const containerRef = useRef<HTMLDivElement>(null);
   const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
   const [streams, setStreams] = useState<Video[]>([]);
   const [started, setStarted] = useState<boolean>(false);
@@ -104,11 +103,6 @@ function Router({
       height: 300,
     });
     setStarted(true);
-    const supports = getSupports();
-    if (!supports.webRTC) {
-      // eslint-disable-next-line no-alert
-      alert(`Not supported browser ${JSON.stringify(supports)}`);
-    }
   }, []);
 
   /**
@@ -116,21 +110,27 @@ function Router({
    */
   useEffect(() => {
     if (started) {
-      // Once get peer instance
-      const peer = getPeer({
-        port,
-        host,
-        path,
-        id: userId,
-        debug,
-        secure,
-      });
-      // Starting room after page load
-      loadRoom({
-        peer,
-        userId,
-        roomId: pathname,
-      });
+      const supports = getSupports();
+      if (!supports.webRTC) {
+        // eslint-disable-next-line no-alert
+        alert(`Not supported browser ${JSON.stringify(supports)}`);
+      } else {
+        // Once get peer instance
+        const peer = getPeer({
+          port,
+          host,
+          path,
+          id: userId,
+          debug,
+          secure,
+        });
+        // Starting room after page load
+        loadRoom({
+          peer,
+          userId,
+          roomId: pathname,
+        });
+      }
     }
   }, [port, host, path, userId, pathname, started, debug, secure]);
 
