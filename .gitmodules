@@ -1,6 +1,3 @@
-[submodule "peerjs-server"]
-	path = peerjs-server
-	url = git@github.com:kolserdav/peerjs-server.git
 [submodule "peerjs"]
 	path = peerjs
 	url = git@github.com:kolserdav/peerjs.git
