@@ -35,7 +35,6 @@ function Router({
   secure?: boolean;
   debug?: 0 | 1 | 2 | 3;
 }) {
-  const navigate = useNavigate();
   const _location = useLocation();
   const location = { ..._location };
   location.pathname = location.pathname.replace(/^\//, '');
@@ -46,7 +45,7 @@ function Router({
 
   const userId = useMemo(
     () =>
-      location.search === ''
+      location.search === '?room=1'
         ? pathname || new Date().getTime().toString()
         : sessionUser || _sessionUser || new Date().getTime().toString(),
     []
@@ -59,12 +58,6 @@ function Router({
   if (_sessionUser) {
     _sessionUser = userId;
   }
-
-  useEffect(() => {
-    if (pathname === '') {
-      navigate(userId);
-    }
-  }, [navigate, pathname, userId]);
 
   useEffect(() => {
     const clearSubs = store.subscribe(() => {
