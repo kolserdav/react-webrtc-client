@@ -69,7 +69,7 @@ export const Supports = new (class {
 			tempPc.addTransceiver("audio");
 			supported = true;
 		} catch (e) {
-			/** */
+			console.log(312312312312)
 		} finally {
 			if (tempPc) {
 				tempPc.close();

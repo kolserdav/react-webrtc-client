@@ -124,7 +124,7 @@ export class Negotiator {
 							peerId}`,
 					);
 					this.connection.emit(
-						ConnectionEventType.Error,
+						ConnectionEventType.Disconnected,
 						new Error(`Connection to ${  peerId  } disconnected.`),
 					);
 					this.connection.close();

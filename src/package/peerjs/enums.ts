@@ -5,6 +5,7 @@ export enum ConnectionEventType {
 	Data = "data",
 	Close = "close",
 	Error = "error",
+	Disconnected = 'disconnected',
 	IceStateChanged = "iceStateChanged",
 }
 

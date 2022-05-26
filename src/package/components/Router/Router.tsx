@@ -130,7 +130,7 @@ function Router({
         alert(`Not supported browser ${JSON.stringify(supports)}`);
       } else {
         // Starting room after page load
-        const connect = loadRoom({
+        loadRoom({
           port,
           host,
           path,
@@ -138,11 +138,6 @@ function Router({
           debug,
           secure,
           roomId: pathname,
-        });
-        connect.then((e) => {
-          if (e) {
-            navigate('/');
-          }
         });
       }
     }

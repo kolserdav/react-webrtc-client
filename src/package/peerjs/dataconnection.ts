@@ -252,44 +252,6 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 
 		super.emit(ConnectionEventType.Close);
 	}
-	// TODO refactor
-	destroy(): void {
-		this._buffer = [];
-		this._bufferSize = 0;
-		this._chunkedData = {};
-
-		if (this._negotiator) {
-			this._negotiator.cleanup();
-			this._negotiator = null;
-		}
-
-		if (this.provider) {
-			this.provider._removeConnection(this);
-
-			this.provider = null;
-		}
-
-		if (this.dataChannel) {
-			this.dataChannel.onopen = null;
-			this.dataChannel.onmessage = null;
-			this.dataChannel.onclose = null;
-			this._dc = null;
-		}
-
-		if (this._encodingQueue) {
-			this._encodingQueue.destroy();
-			this._encodingQueue.removeAllListeners();
-			this._encodingQueue = null;
-		}
-
-		if (!this.open) {
-			return;
-		}
-
-		this._open = false;
-
-		super.emit(ConnectionEventType.Error);
-	}
 
 	/** Allows user to send data. */
 	send(data: any, chunked?: boolean): void {

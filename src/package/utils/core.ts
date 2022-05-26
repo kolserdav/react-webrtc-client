@@ -50,12 +50,10 @@ export const addVideoStream = ({ stream, id }: { stream: MediaStream; id: string
 const callToRoom = ({
   stream,
   roomId,
-  userId,
   peer,
 }: {
   stream: MediaStream;
   roomId: string;
-  userId: string;
   peer: Peer;
 }) => {
   // If guest that call to room
@@ -74,14 +72,18 @@ const callToRoom = ({
     });
     // Reconnect to room
     call.on('close', () => {
-      setTimeout(() => {
-        sendMessage({
-          type: 'disconnect',
-          peer,
-          value: [call.peer],
-          id: roomId,
-        });
-      }, 1000);
+      if (!isRoom) {
+        setTimeout(() => {
+          sendMessage({
+            type: 'disconnect',
+            peer,
+            value: [call.peer],
+            id: roomId,
+          });
+        }, 1000);
+      } else {
+        console.log(87, users);
+      }
     });
   } else {
     Console.error('Call is null: 78');
@@ -105,21 +107,11 @@ export const loadSelfStreamAndCallToRoom = ({
         stream,
         id: userId,
       });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const _peer: any = peer;
-      const cons = _peer._connections;
-      let check = true;
-      for (let i = 0; cons[i]; i++) {
-        if (cons[i] === roomId) {
-          check = false;
-        }
-      }
-      if (check && roomId !== userId) {
+      if (roomId !== userId) {
         callToRoom({
           stream,
           peer,
           roomId,
-          userId,
         });
       }
     })
@@ -156,26 +148,34 @@ const connectWithAll = ({
 }) => {
   list.forEach((item) => {
     if (item !== userId && conn.provider) {
-      const { connections } = conn.provider;
-      let check = true;
-      for (let i = 0; connections[i]; i++) {
-        if (connections[i] === userId) {
-          check = false;
-        }
-      }
-      if (check) {
-        loadSelfStreamAndCallToRoom({
-          roomId: item,
-          peer,
-          userId,
-        });
-      }
+      loadSelfStreamAndCallToRoom({
+        roomId: item,
+        peer,
+        userId,
+      });
     }
   });
 };
 
 const getUniqueUser = ({ userId, list }: { userId: string; list: string[] }) =>
   list.filter((item) => item === userId).length === 0;
+
+const dropUser = ({ roomId, userId, peer }: { roomId: string; userId: string; peer: Peer }) => {
+  removeOneUser({ userId });
+  removeDisconnected({
+    userId,
+  });
+  users.forEach((item) => {
+    if (item !== roomId) {
+      sendMessage({
+        type: 'dropuser',
+        value: [userId],
+        id: item,
+        peer,
+      });
+    }
+  });
+};
 
 export const loadRoom = async ({
   roomId,
@@ -193,131 +193,140 @@ export const loadRoom = async ({
   host: string;
   debug?: 0 | 1 | 2 | 3;
   secure?: boolean;
-}): Promise<1 | 0> => {
+}): Promise<void> => {
   isRoom = roomId === userId;
   const peer = getPeer({ userId, path, port, host, debug, secure });
-  return new Promise((resolve) => {
-    peer.on('open', (id) => {
-      // Listen incoming call
-      peer.on('call', (call) => {
-        navigator.mediaDevices
-          .getUserMedia({ video: true, audio: true })
-          .then((stream) => {
-            call.answer(stream);
-            let two = 2;
-            call.on('stream', (remoteStream) => {
-              // Runing twice anytime
-              two++;
-              if (two % 2 === 0) {
-                addVideoStream({
-                  stream: remoteStream,
-                  id: call.peer,
-                });
-              }
-            });
-          })
-          .catch((err) => {
-            if (err.name === 'NotAllowedError') {
-              // eslint-disable-next-line no-alert
-              alert(`Error ${err.name}: ${err.message}`);
-            }
-            Console.error('Failed to get local stream', err);
-          });
-      });
-      // Listen room connections
-      peer.on('connection', (conn) => {
-        const guestId = conn.peer;
-        // Guest disconnected
-        conn.on('close', () => {
-          if (isRoom) {
-            removeOneUser({ userId: guestId });
-            removeDisconnected({
-              userId: guestId,
-            });
-            users.forEach((item) => {
+
+  peer.on('open', (id) => {
+    if (roomId) {
+      setInterval(() => {
+        if (users.length === 1) {
+          setTimeout(() => {
+            if (users.length === 1) {
               sendMessage({
                 type: 'dropuser',
-                value: [guestId],
-                id: item,
+                id: `dropuser_${roomId}`,
                 peer,
+                value: [roomId],
               });
-            });
+            }
+          }, 3000);
+        }
+      }, 2000);
+    }
+    // Listen incoming call
+    peer.on('call', (call) => {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then((stream) => {
+          call.answer(stream);
+          let two = 2;
+          call.on('stream', (remoteStream) => {
+            // Runing twice anytime
+            two++;
+            if (two % 2 === 0) {
+              addVideoStream({
+                stream: remoteStream,
+                id: call.peer,
+              });
+            }
+          });
+        })
+        .catch((err) => {
+          if (err.name === 'NotAllowedError') {
+            // eslint-disable-next-line no-alert
+            alert(`Error ${err.name}: ${err.message}`);
           }
+          Console.error('Failed to get local stream', err);
         });
-        conn.on('error', (id) => {
-          console.log(1111, id);
-        });
-        const _id = conn.peer;
-        // Listen room messages
-        conn.on('data', (data) => {
-          const { value } = data as { value: string[] };
-          switch (data.type) {
-            case 'connect':
-              if (getUniqueUser({ userId: _id, list: users })) {
-                users.push(_id);
-                saveUsers({ users });
-              }
+    });
+    // Listen room connections
+    peer.on('connection', (conn) => {
+      const guestId = conn.peer;
+      // Guest disconnected
+      conn.on('close', () => {
+        if (isRoom) {
+          dropUser({ userId: guestId, roomId, peer });
+        }
+      });
+      conn.on('error', (_id) => {
+        console.log(1111, _id);
+      });
+      conn.on('disconnected', (_id) => {
+        dropUser({ userId: guestId, peer, roomId });
+        console.log(users);
+        if (users.length === 1) {
+          window.close();
+        }
+      });
+      const _id = conn.peer;
+      // Listen room messages
+      conn.on('data', (data) => {
+        const { value } = data as { value: string[] };
+        switch (data.type) {
+          case 'connect':
+            if (getUniqueUser({ userId: _id, list: users })) {
+              users.push(_id);
+              saveUsers({ users });
+            }
+            sendMessage({
+              peer,
+              type: 'onconnect',
+              value: users,
+              id: guestId,
+            });
+            break;
+          case 'onconnect':
+            // Call from new guest to other guests
+            connectWithAll({
+              peer,
+              userId,
+              list: value,
+              conn,
+            });
+            break;
+          case 'disconnect':
+            if (users.indexOf(value[0]) !== -1) {
               sendMessage({
                 peer,
                 type: 'onconnect',
                 value: users,
-                id: guestId,
+                id: value[0],
               });
-              break;
-            case 'onconnect':
-              // Call from new guest to other guests
-              connectWithAll({
-                peer,
-                userId,
-                list: value,
-                conn,
+            }
+            break;
+          case 'dropuser':
+            if (value[0] !== userId) {
+              removeDisconnected({
+                userId: value[0],
               });
-              break;
-            case 'disconnect':
-              if (users.indexOf(value[0]) !== -1) {
-                sendMessage({
-                  peer,
-                  type: 'onconnect',
-                  value: users,
-                  id: value[0],
-                });
-              }
-              break;
-            case 'dropuser':
-              if (value[0] !== userId) {
-                removeDisconnected({
-                  userId: value[0],
-                });
-              }
-              break;
-            default:
-              Console.warn('Unresolved peer message', data);
-          }
-          Console.info('Event', data);
-        });
-        Console.info('Event', { type: 'connection', value: conn });
-        resolve(0);
-      });
-      // TODO refactor destroy
-      peer.on('error', (err) => {
-        resolve(1);
-        Console.error('Error 322:', err);
-      });
-      // Connect to room
-      if (isRoom) {
-        if (getUniqueUser({ userId, list: users })) {
-          users.push(userId);
-          saveUsers({ users });
+            }
+            break;
+          default:
+            Console.warn('Unresolved peer message', data);
         }
-        loadSelfStreamAndCallToRoom({ roomId, userId, peer });
-      } else {
-        sendMessage({
-          type: 'connect',
-          peer,
-          value: [userId],
-          id: roomId,
-        });
-      }
+        Console.info('Event', data);
+      });
+      Console.info('Event', { type: 'connection', value: conn });
     });
+    // TODO refactor destroy
+    peer.on('error', (err) => {
+      Console.error('Error 322:', err);
+    });
+    // Connect to room
+    if (isRoom) {
+      if (getUniqueUser({ userId, list: users })) {
+        users.push(userId);
+        saveUsers({ users });
+        loadSelfStreamAndCallToRoom({ roomId, userId, peer });
+      }
+    } else {
+      sendMessage({
+        type: 'connect',
+        peer,
+        value: [userId],
+        id: roomId,
+      });
+    }
   });
 };
