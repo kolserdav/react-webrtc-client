@@ -11,7 +11,7 @@ interface VideoSource extends Video {
   ref: React.Ref<HTMLVideoElement>;
 }
 
-export const getRefs = (_streams: Video[]): VideoSource[] => {
+export const getRefs = (_streams: Record<string, MediaStream>[]): VideoSource[] => {
   let sources = [];
   for (let i = 0; _streams[i]; i++) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

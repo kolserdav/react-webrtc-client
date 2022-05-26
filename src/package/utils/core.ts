@@ -39,10 +39,13 @@ const getPeer = ({
 
 export const addVideoStream = ({ stream, id }: { stream: MediaStream; id: string }): void => {
   store.dispatch({
-    type: 'added',
-    added: {
-      id,
-      stream,
+    type: 'added-user',
+    added: id,
+  });
+  store.dispatch({
+    type: 'changed-stream',
+    changed: {
+      [id]: stream,
     },
   });
 };
@@ -202,24 +205,17 @@ export const loadRoom = async ({
         const guestId = conn.peer;
         // Guest disconnected
         conn.on('close', (d) => {
-          if (users.indexOf(guestId) === -1) {
-            removeOneUser({ userId: guestId });
-            setTimeout(() => {
-              removeDisconnected({
-                userId: guestId,
-              });
-              users.forEach((item) => {
-                if (item !== roomId) {
-                  sendMessage({
-                    type: 'dropuser',
-                    value: [guestId],
-                    id: item,
-                    peer,
-                  });
-                }
-              });
-            }, 3000);
-          }
+          removeDisconnected({
+            userId: guestId,
+          });
+          users.forEach((item) => {
+            sendMessage({
+              type: 'dropuser',
+              value: [guestId],
+              id: item,
+              peer,
+            });
+          });
         });
         const _id = conn.peer;
         // Listen room messages
@@ -251,6 +247,9 @@ export const loadRoom = async ({
                 removeDisconnected({
                   userId: value[0],
                 });
+                if (isRoom) {
+                  removeOneUser({ userId: value[0] });
+                }
               }
               break;
             default:

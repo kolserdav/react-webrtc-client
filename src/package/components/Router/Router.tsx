@@ -44,8 +44,12 @@ function Router({
     userId: string | undefined;
   };
   const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
-  const [streams, setStreams] = useState<Video[]>([]);
+  const [users, setUsers] = useState<string[]>([]);
+  const [streams, setStreams] = useState<
+    Record<string, { stream: MediaStream; ref: React.LegacyRef<HTMLVideoElement> | undefined }>
+  >({});
   const [started, setStarted] = useState<boolean>(false);
+  const [names, setNames] = useState<string[]>(['1', '2']);
 
   const _userId = useMemo(
     () =>
@@ -68,16 +72,31 @@ function Router({
       if (started) {
         setStarted(false);
       }
-      const { type, added, deleted } = store.getState();
-      let _streams: typeof streams = [];
-      if (type === 'added' && added) {
-        if (streams.filter((item) => item.id === added.id).length === 0) {
-          _streams = streams.map((item) => item);
-          _streams.push(added);
-          setStreams(_streams);
+      const { type, added, deleted, changed } = store.getState();
+      let _users: typeof users = [];
+      // TODO fixed reload guest
+      if (type === 'added-user' && added) {
+        console.log('added', added, _users);
+        if (users.filter((item) => item === added).length === 0 && !/^0/.test(added)) {
+          _users = users.map((item) => item);
+          _users.push(added);
+          setUsers(_users);
         }
       } else if (type === 'deleted' && deleted) {
-        _streams = streams.filter((item) => item.id !== deleted);
+        console.log('deleted', deleted, _users);
+        _users = users.filter((item) => item !== deleted);
+        setUsers(_users);
+      } else if (type === 'changed-stream' && changed) {
+        const _changed: any = {};
+        const keys = Object.keys(changed);
+        const key = keys[0];
+        _changed[key] = {
+          ref: (node: HTMLVideoElement) => {
+            // eslint-disable-next-line no-param-reassign
+            if (node) node.srcObject = changed[key];
+          },
+        };
+        const _streams = { ...streams, ..._changed };
         setStreams(_streams);
       }
       const { width, items } = getWidthOfItem({ container: document.body });
@@ -96,6 +115,9 @@ function Router({
    * Check supports
    */
   useEffect(() => {
+    setTimeout(() => {
+      setNames(['3', '4']);
+    }, 2000);
     setParams({
       width: 200,
       height: 300,
@@ -134,19 +156,17 @@ function Router({
 
   const connectLink = `${window.location.origin}/${pathname}`;
 
-  const _streams = useMemo(() => getRefs(streams), [streams]);
-
   return (
     <div className={s.wrapper}>
       <div className={s.container} id={cId}>
-        {_streams.map((item) => (
+        {users.map((item) => (
           <video
-            key={item.id}
+            key={item}
             width={params.width}
             height={params.height}
-            ref={item.ref}
-            id={item.id}
-            title={item.id}
+            ref={streams[item]?.ref}
+            id={item}
+            title={item}
             autoPlay
           />
         ))}
