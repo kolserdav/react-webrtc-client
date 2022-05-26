@@ -12,7 +12,7 @@ interface VideoSource extends Video {
 }
 
 export const getRefs = (_streams: Video[]): VideoSource[] => {
-  const sources = [];
+  let sources = [];
   for (let i = 0; _streams[i]; i++) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const item: any = _streams[i];
@@ -23,6 +23,7 @@ export const getRefs = (_streams: Video[]): VideoSource[] => {
     };
     sources.push(_item);
   }
+  sources = sources.filter((item) => !/^0/.test(item.id));
   return sources.sort((a, b) => {
     if (parseInt(a.id, 10) < parseInt(b.id, 10)) {
       return -1;

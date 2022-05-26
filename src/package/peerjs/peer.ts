@@ -587,7 +587,6 @@ export class Peer extends EventEmitter<PeerEvents> {
 		if (this.destroyed) {
 			return;
 		}
-
 		logger.log(`Destroy peer with ID:${this.id}`);
 
 		this.disconnect();

@@ -31,6 +31,7 @@
     "eventemitter3": "^4.0.7",
     "peerjs": "^1.4.4",
     "peerjs-js-binarypack": "^1.0.1",
+    "query-string": "^7.1.1",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
     "react-router-dom": "^6.3.0",

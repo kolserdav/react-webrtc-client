@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import queryString from 'query-string';
 import {
-  getPeer,
   loadRoom,
   getSupports,
   DEFAULT_PARAMS,
@@ -35,28 +35,32 @@ function Router({
   secure?: boolean;
   debug?: 0 | 1 | 2 | 3;
 }) {
+  const navigate = useNavigate();
   const _location = useLocation();
   const location = { ..._location };
   location.pathname = location.pathname.replace(/^\//, '');
-  const { pathname } = location;
+  const { pathname, search } = location;
+  const { userId } = useMemo(() => queryString.parse(search.replace('?', '')), [search]) as {
+    userId: string | undefined;
+  };
   const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
   const [streams, setStreams] = useState<Video[]>([]);
   const [started, setStarted] = useState<boolean>(false);
 
-  const userId = useMemo(
+  const _userId = useMemo(
     () =>
       location.search === '?room=1'
-        ? pathname || new Date().getTime().toString()
-        : sessionUser || _sessionUser || new Date().getTime().toString(),
+        ? pathname
+        : userId || sessionUser || _sessionUser || new Date().getTime().toString(),
     []
   );
-  const cId = userId.replace(/^\d/, '');
+  const cId = _userId.replace(/^\d/, '');
 
   if (!sessionUser) {
-    sessionStorage.setItem(SESSION_STORAGE_USER_ID, userId);
+    sessionStorage.setItem(SESSION_STORAGE_USER_ID, _userId);
   }
   if (_sessionUser) {
-    _sessionUser = userId;
+    _sessionUser = _userId;
   }
 
   useEffect(() => {
@@ -77,10 +81,11 @@ function Router({
         setStreams(_streams);
       }
       const { width, items } = getWidthOfItem({ container: document.body });
+      /*
       setParams({
         width,
         height: width,
-      });
+      }); */
     });
     return () => {
       clearSubs();
@@ -96,7 +101,7 @@ function Router({
       height: 300,
     });
     setStarted(true);
-  }, []);
+  }, [pathname]);
 
   /**
    * Create room
@@ -108,26 +113,26 @@ function Router({
         // eslint-disable-next-line no-alert
         alert(`Not supported browser ${JSON.stringify(supports)}`);
       } else {
-        // Once get peer instance
-        const peer = getPeer({
+        // Starting room after page load
+        const connect = loadRoom({
           port,
           host,
           path,
-          id: userId,
+          userId: _userId,
           debug,
           secure,
-        });
-        // Starting room after page load
-        loadRoom({
-          peer,
-          userId,
           roomId: pathname,
+        });
+        connect.then((e) => {
+          if (e) {
+            navigate('/');
+          }
         });
       }
     }
-  }, [port, host, path, userId, pathname, started, debug, secure]);
+  }, [port, host, path, _userId, pathname, started, debug, secure]);
 
-  const connectLink = `${window.location.origin}/${userId}?guest=1`;
+  const connectLink = `${window.location.origin}/${pathname}`;
 
   const _streams = useMemo(() => getRefs(streams), [streams]);
 

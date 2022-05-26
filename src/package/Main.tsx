@@ -6,13 +6,9 @@ import Router from './components/Router/Router';
  * Main component of library
  */
 
-interface MainProps {
-  test?: boolean;
-}
-
 const isProd = process.env.NODE_ENV === 'production';
 
-function Main({ test }: MainProps) {
+function Main() {
   return (
     <BrowserRouter>
       <Router
@@ -27,7 +23,7 @@ function Main({ test }: MainProps) {
 }
 
 Main.defaultProps = {
-  test: false,
+  userId: '',
 };
 
 export default Main;

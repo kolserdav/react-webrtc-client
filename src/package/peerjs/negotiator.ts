@@ -123,6 +123,11 @@ export class Negotiator {
 						`iceConnectionState changed to disconnected on the connection with ${ 
 							peerId}`,
 					);
+					this.connection.emit(
+						ConnectionEventType.Error,
+						new Error(`Connection to ${  peerId  } disconnected.`),
+					);
+					this.connection.close();
 					break;
 				case "completed":
 					// eslint-disable-next-line no-param-reassign
