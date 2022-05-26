@@ -121,10 +121,9 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 	/**
 	 * A hash of all connections associated with this peer, keyed by the remote peer's ID.
-	 * @deprecated
 	 * Return type will change from Object to Map<string,[]>
 	 */
-	get connections(): Object {
+	get connections(): Record<number, string> {
 		const plainConnections = Object.create(null);
 
 		for (const [k, v] of this._connections) {

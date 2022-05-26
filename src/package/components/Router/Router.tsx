@@ -72,32 +72,29 @@ function Router({
       if (started) {
         setStarted(false);
       }
-      const { type, added, deleted, changed } = store.getState();
+      const { type, added, deleted } = store.getState();
       let _users: typeof users = [];
       // TODO fixed reload guest
       if (type === 'added-user' && added) {
-        console.log('added', added, _users);
-        if (users.filter((item) => item === added).length === 0 && !/^0/.test(added)) {
-          _users = users.map((item) => item);
-          _users.push(added);
+        _users = users.map((item) => item);
+        if (users.filter((item) => item === added.id).length === 0 && !/^0/.test(added.id)) {
+          _users.push(added.id);
           setUsers(_users);
         }
+        if (_users.indexOf(added.id) !== -1) {
+          const _changed: any = {};
+          _changed[added.id] = {
+            ref: (node: HTMLVideoElement) => {
+              // eslint-disable-next-line no-param-reassign
+              if (node) node.srcObject = added.stream;
+            },
+          };
+          const _streams = { ...streams, ..._changed };
+          setStreams(_streams);
+        }
       } else if (type === 'deleted' && deleted) {
-        console.log('deleted', deleted, _users);
         _users = users.filter((item) => item !== deleted);
         setUsers(_users);
-      } else if (type === 'changed-stream' && changed) {
-        const _changed: any = {};
-        const keys = Object.keys(changed);
-        const key = keys[0];
-        _changed[key] = {
-          ref: (node: HTMLVideoElement) => {
-            // eslint-disable-next-line no-param-reassign
-            if (node) node.srcObject = changed[key];
-          },
-        };
-        const _streams = { ...streams, ..._changed };
-        setStreams(_streams);
       }
       const { width, items } = getWidthOfItem({ container: document.body });
       /*
@@ -109,15 +106,12 @@ function Router({
     return () => {
       clearSubs();
     };
-  }, [streams]);
+  }, [users]);
 
   /**
    * Check supports
    */
   useEffect(() => {
-    setTimeout(() => {
-      setNames(['3', '4']);
-    }, 2000);
     setParams({
       width: 200,
       height: 300,
@@ -152,10 +146,9 @@ function Router({
         });
       }
     }
-  }, [port, host, path, _userId, pathname, started, debug, secure]);
+  }, [started]);
 
   const connectLink = `${window.location.origin}/${pathname}`;
-
   return (
     <div className={s.wrapper}>
       <div className={s.container} id={cId}>
@@ -175,6 +168,7 @@ function Router({
         <a className={s.room__link} target="_blank" href={connectLink} rel="noreferrer">
           {connectLink}
         </a>
+        <p className={s.room__link}>{_userId}</p>
       </div>
     </div>
   );

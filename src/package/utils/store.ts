@@ -2,12 +2,14 @@
 import { createStore } from 'redux';
 import { Video } from './lib';
 
-type StoreType = 'initial' | 'added-user' | 'changed-stream' | 'deleted';
+type StoreType = 'initial' | 'added-user' | 'deleted';
 
 interface Reducer {
   type: StoreType;
-  added?: string;
-  changed?: Record<string, MediaStream>;
+  added?: {
+    id: string;
+    stream: MediaStream;
+  };
   deleted?: string;
 }
 // Todo think about state

@@ -1,6 +1,6 @@
 /* eslint-disable import/no-relative-packages */
 import React from 'react';
-import { Peer, util } from './peer';
+import { Peer, util, DataConnection } from './peer';
 import Console from './console';
 import { sendMessage, removeDisconnected, saveUsers, getSessionUsers } from './lib';
 import store from './store';
@@ -40,12 +40,9 @@ const getPeer = ({
 export const addVideoStream = ({ stream, id }: { stream: MediaStream; id: string }): void => {
   store.dispatch({
     type: 'added-user',
-    added: id,
-  });
-  store.dispatch({
-    type: 'changed-stream',
-    changed: {
-      [id]: stream,
+    added: {
+      id,
+      stream,
     },
   });
 };
@@ -64,20 +61,24 @@ const callToRoom = ({
   // If guest that call to room
   const call = peer.call(roomId, stream);
   if (call) {
+    let two = 2;
     call.on('stream', (remoteStream) => {
       // Runing twice anytime
-      addVideoStream({
-        stream: remoteStream,
-        id: roomId,
-      });
+      two++;
+      if (two % 2 === 0) {
+        addVideoStream({
+          stream: remoteStream,
+          id: roomId,
+        });
+      }
     });
     // Reconnect to room
     call.on('close', () => {
       setTimeout(() => {
         sendMessage({
-          type: 'connect',
+          type: 'disconnect',
           peer,
-          value: [userId],
+          value: [call.peer],
           id: roomId,
         });
       }, 1000);
@@ -142,14 +143,33 @@ const removeOneUser = ({ userId }: { userId: string }) => {
 /**
  * Connect with other users
  */
-const connectWithAll = ({ list, peer, userId }: { list: string[]; peer: Peer; userId: string }) => {
+const connectWithAll = ({
+  list,
+  peer,
+  userId,
+  conn,
+}: {
+  list: string[];
+  peer: Peer;
+  userId: string;
+  conn: DataConnection;
+}) => {
   list.forEach((item) => {
-    if (item !== userId) {
-      loadSelfStreamAndCallToRoom({
-        roomId: item,
-        peer,
-        userId,
-      });
+    if (item !== userId && conn.provider) {
+      const { connections } = conn.provider;
+      let check = true;
+      for (let i = 0; connections[i]; i++) {
+        if (connections[i] === userId) {
+          check = false;
+        }
+      }
+      if (check) {
+        loadSelfStreamAndCallToRoom({
+          roomId: item,
+          peer,
+          userId,
+        });
+      }
     }
   });
 };
@@ -184,12 +204,16 @@ export const loadRoom = async ({
           .getUserMedia({ video: true, audio: true })
           .then((stream) => {
             call.answer(stream);
+            let two = 2;
             call.on('stream', (remoteStream) => {
               // Runing twice anytime
-              addVideoStream({
-                stream: remoteStream,
-                id: call.peer,
-              });
+              two++;
+              if (two % 2 === 0) {
+                addVideoStream({
+                  stream: remoteStream,
+                  id: call.peer,
+                });
+              }
             });
           })
           .catch((err) => {
@@ -204,18 +228,24 @@ export const loadRoom = async ({
       peer.on('connection', (conn) => {
         const guestId = conn.peer;
         // Guest disconnected
-        conn.on('close', (d) => {
-          removeDisconnected({
-            userId: guestId,
-          });
-          users.forEach((item) => {
-            sendMessage({
-              type: 'dropuser',
-              value: [guestId],
-              id: item,
-              peer,
+        conn.on('close', () => {
+          if (isRoom) {
+            removeOneUser({ userId: guestId });
+            removeDisconnected({
+              userId: guestId,
             });
-          });
+            users.forEach((item) => {
+              sendMessage({
+                type: 'dropuser',
+                value: [guestId],
+                id: item,
+                peer,
+              });
+            });
+          }
+        });
+        conn.on('error', (id) => {
+          console.log(1111, id);
         });
         const _id = conn.peer;
         // Listen room messages
@@ -240,16 +270,24 @@ export const loadRoom = async ({
                 peer,
                 userId,
                 list: value,
+                conn,
               });
+              break;
+            case 'disconnect':
+              if (users.indexOf(value[0]) !== -1) {
+                sendMessage({
+                  peer,
+                  type: 'onconnect',
+                  value: users,
+                  id: value[0],
+                });
+              }
               break;
             case 'dropuser':
               if (value[0] !== userId) {
                 removeDisconnected({
                   userId: value[0],
                 });
-                if (isRoom) {
-                  removeOneUser({ userId: value[0] });
-                }
               }
               break;
             default:
@@ -260,6 +298,7 @@ export const loadRoom = async ({
         Console.info('Event', { type: 'connection', value: conn });
         resolve(0);
       });
+      // TODO refactor destroy
       peer.on('error', (err) => {
         resolve(1);
         Console.error('Error 322:', err);

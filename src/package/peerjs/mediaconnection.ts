@@ -158,4 +158,31 @@ export class MediaConnection extends BaseConnection {
 
 		super.emit(ConnectionEventType.Close);
 	}
+ // TODO refactor
+	destroy(): void {
+		if (this._negotiator) {
+			this._negotiator.cleanup();
+			this._negotiator = null;
+		}
+
+		this._localStream = null;
+		this._remoteStream = null;
+
+		if (this.provider) {
+			this.provider._removeConnection(this);
+
+			this.provider = null;
+		}
+
+		if (this.options && this.options._stream) {
+			this.options._stream = null;
+		}
+
+		if (!this.open) {
+			return;
+		}
+
+		this._open = false;
+		super.emit(ConnectionEventType.Error);
+	}
 }

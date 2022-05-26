@@ -11,7 +11,7 @@ interface VideoSource extends Video {
   ref: React.Ref<HTMLVideoElement>;
 }
 
-export const getRefs = (_streams: Record<string, MediaStream>[]): VideoSource[] => {
+export const getRefs = (_streams: Record<string, MediaStream>): VideoSource[] => {
   let sources = [];
   for (let i = 0; _streams[i]; i++) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,7 +56,7 @@ export const sendMessage = async ({
   peer: Peer;
   value: string[];
   id: string;
-  type: 'connect' | 'onconnect' | 'dropuser';
+  type: 'connect' | 'onconnect' | 'dropuser' | 'disconnect';
 }): Promise<1 | 0> => {
   const connection = peer.connect(id);
   if (connection) {

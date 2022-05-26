@@ -31,5 +31,7 @@ export abstract class BaseConnection extends EventEmitter {
 
 	abstract close(): void;
 
+	abstract destroy(): void;
+
 	abstract handleMessage(message: ServerMessage): void;
 }
