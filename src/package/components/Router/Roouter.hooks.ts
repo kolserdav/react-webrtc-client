@@ -46,8 +46,12 @@ export const useVideoDimensions = ({
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { target }: { target: HTMLVideoElement } = e as any;
           if (target.getAttribute('data') !== 'full') {
-            const { width, cols, rows } = getWidthOfItem({ length, container });
             const { videoHeight, videoWidth } = target;
+            const { width, cols, rows } = getWidthOfItem({
+              length,
+              container,
+              coeff: videoWidth / videoHeight,
+            });
             const coeff = videoWidth / videoHeight;
             if (videoHeight < videoWidth) {
               target.setAttribute('width', width.toString());
@@ -85,7 +89,6 @@ export const useOnClickVideo = () => (e: React.MouseEvent<HTMLVideoElement, Mous
 export const useOnclickClose =
   ({ length, container }: { length: number; container: React.RefObject<HTMLDivElement> }) =>
   (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    const { width } = getWidthOfItem({ length, container });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { target }: any = e;
     const { nodeName } = target;
@@ -98,6 +101,7 @@ export const useOnclickClose =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const video: HTMLVideoElement = button.nextElementSibling as any;
     const { videoWidth, videoHeight } = video;
+    const { width } = getWidthOfItem({ length, container, coeff: videoWidth / videoHeight });
     const coeff = videoWidth / videoHeight;
     const height = width / coeff;
     video.parentElement?.classList.remove(s.video__fixed);

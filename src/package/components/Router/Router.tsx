@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import queryString from 'query-string';
-import { loadRoom, getSupports, SESSION_STORAGE_USER_ID } from '../../utils';
+import { loadRoom, getSupports, SESSION_STORAGE_USER_ID, getPeer } from '../../utils';
 import s from './Router.module.scss';
 import {
   useOnclickClose,
@@ -43,7 +43,10 @@ function Router({
   const { userId } = useMemo(() => queryString.parse(search.replace('?', '')), [search]) as {
     userId: string | undefined;
   };
-  const [started, setStarted] = useState<boolean>(false);
+
+  const [shareScreen, setShareScreen] = useState<boolean>(false);
+  const [supported, setSupported] = useState<boolean>(false);
+  const [restart, setRestart] = useState<boolean>(false);
 
   const _userId = useMemo(
     () =>
@@ -67,37 +70,56 @@ function Router({
   const onClickVideo = useOnClickVideo();
   const onClickClose = useOnclickClose({ container, length: users.length });
   const onPressEscape = usePressEscape();
+  const peer = useMemo(
+    () => getPeer({ userId: _userId, path, port, host, debug, secure }),
+    [userId, path, port, host, debug, secure, restart]
+  );
 
-  /**
-   * Check supports
-   */
   useEffect(() => {
-    setStarted(true);
-  }, [pathname]);
+    const supports = getSupports();
+    if (!supports.webRTC) {
+      // eslint-disable-next-line no-alert
+      alert(`Not supported browser ${JSON.stringify(supports)}`);
+      return;
+    }
+    setSupported(true);
+  }, []);
 
   /**
    * Create room
    */
   useEffect(() => {
-    if (started) {
-      const supports = getSupports();
-      if (!supports.webRTC) {
-        // eslint-disable-next-line no-alert
-        alert(`Not supported browser ${JSON.stringify(supports)}`);
-      } else {
-        // Starting room after page load
-        loadRoom({
-          port,
-          host,
-          path,
-          userId: _userId,
-          debug,
-          secure,
-          roomId: pathname,
-        });
-      }
+    if (!supported) {
+      return;
     }
-  }, [started]);
+    if (!peer.open) {
+      // Starting room after page load
+      loadRoom({
+        peer,
+        userId: _userId,
+        roomId: pathname,
+        shareScreen,
+      });
+    } else {
+      // Restarting
+      peer.disconnect();
+      peer.destroy();
+      setRestart(!restart);
+    }
+  }, [shareScreen, supported]);
+
+  useEffect(() => {
+    if (!supported) {
+      return;
+    }
+    console.log(1);
+    loadRoom({
+      peer,
+      userId: _userId,
+      roomId: pathname,
+      shareScreen,
+    });
+  }, [restart]);
 
   const connectLink = `${window.location.origin}/${pathname}`;
   return (
@@ -122,6 +144,15 @@ function Router({
           {connectLink}
         </a>
         <p className={s.room__link}>{_userId}</p>
+        {!shareScreen ? (
+          <button type="button" onClick={() => setShareScreen(true)}>
+            Share screen
+          </button>
+        ) : (
+          <button type="button" onClick={() => setShareScreen(false)}>
+            Stop share screen
+          </button>
+        )}
       </div>
     </div>
   );

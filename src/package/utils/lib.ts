@@ -70,9 +70,11 @@ export const saveUsers = ({ users }: { users: string[] }): void => {
 export const getWidthOfItem = ({
   length,
   container,
+  coeff,
 }: {
   length: number;
   container: React.RefObject<HTMLDivElement>;
+  coeff: number;
 }) => {
   const { current } = container;
   let a = 0;
@@ -89,7 +91,7 @@ export const getWidthOfItem = ({
           dims = horizontal ? { cols: 2, rows: 1 } : { cols: 1, rows: 2 };
           break;
         case 3:
-          dims = horizontal ? { cols: 3, rows: 1 } : { cols: 1, rows: 3 };
+          dims = { cols: 2, rows: 2 };
           break;
         case 4:
           dims = { cols: 2, rows: 2 };
@@ -105,7 +107,7 @@ export const getWidthOfItem = ({
       }
       const w = width / dims.cols;
       const h = height / dims.rows;
-      a = width > height ? w : h;
+      a = coeff > 1 ? w : h;
     }
   }
   return {

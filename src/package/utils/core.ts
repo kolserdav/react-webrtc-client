@@ -12,7 +12,7 @@ let isRoom = false;
 
 export const getSupports = () => util.supports;
 
-const getPeer = ({
+export const getPeer = ({
   path,
   port,
   host,
@@ -128,14 +128,18 @@ export const loadSelfStreamAndCallToRoom = ({
   roomId,
   userId,
   peer,
+  shareScreen,
 }: {
   roomId: string;
   userId: string;
   peer: Peer;
+  shareScreen: boolean;
 }) => {
   // Load self stream
-  navigator.mediaDevices
-    .getUserMedia({ video: true, audio: true })
+  navigator.mediaDevices[shareScreen ? 'getDisplayMedia' : 'getUserMedia']({
+    video: true,
+    audio: true,
+  })
     .then((stream) => {
       addVideoStream({
         stream,
@@ -174,11 +178,13 @@ const connectWithAll = ({
   peer,
   userId,
   conn,
+  shareScreen,
 }: {
   list: string[];
   peer: Peer;
   userId: string;
   conn: DataConnection;
+  shareScreen: boolean;
 }) => {
   list.forEach((item) => {
     if (item !== userId && conn.provider) {
@@ -186,6 +192,7 @@ const connectWithAll = ({
         roomId: item,
         peer,
         userId,
+        shareScreen,
       });
     }
   });
@@ -211,7 +218,7 @@ const dropUser = ({ roomId, userId, peer }: { roomId: string; userId: string; pe
   });
 };
 
-const empptyRoommHandler = ({ peer, roomId }: { peer: Peer; roomId: string }) => {
+const emptyRoomHandler = ({ peer, roomId }: { peer: Peer; roomId: string }) => {
   if (users.length === 1) {
     setTimeout(() => {
       if (users.length === 1) {
@@ -227,35 +234,29 @@ const empptyRoommHandler = ({ peer, roomId }: { peer: Peer; roomId: string }) =>
 };
 
 export const loadRoom = async ({
+  peer,
   roomId,
   userId,
-  path,
-  port,
-  host,
-  debug,
-  secure,
+  shareScreen = false,
 }: {
+  peer: Peer;
   roomId: string;
   userId: string;
-  path: string;
-  port: number;
-  host: string;
-  debug?: 0 | 1 | 2 | 3;
-  secure?: boolean;
+  shareScreen?: boolean;
 }): Promise<void> => {
   isRoom = roomId === userId;
-  const peer = getPeer({ userId, path, port, host, debug, secure });
-
   peer.on('open', (id) => {
     if (roomId) {
       setInterval(() => {
-        empptyRoommHandler({ peer, roomId });
+        emptyRoomHandler({ peer, roomId });
       }, 2000);
     }
     // Listen incoming call
     peer.on('call', (call) => {
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
+      navigator.mediaDevices[shareScreen ? 'getDisplayMedia' : 'getUserMedia']({
+        video: true,
+        audio: true,
+      })
         .then((stream) => {
           call.answer(stream);
           let two = 2;
@@ -292,7 +293,7 @@ export const loadRoom = async ({
       });
       conn.on('disconnected', (_id) => {
         dropUser({ userId: guestId, peer, roomId });
-        empptyRoommHandler({ roomId, peer });
+        emptyRoomHandler({ roomId, peer });
       });
       const _id = conn.peer;
       // Listen room messages
@@ -318,6 +319,7 @@ export const loadRoom = async ({
               userId,
               list: value,
               conn,
+              shareScreen,
             });
             break;
           case 'disconnect':
@@ -353,7 +355,7 @@ export const loadRoom = async ({
       if (getUniqueUser({ userId, list: users })) {
         users.push(userId);
         saveUsers({ users });
-        loadSelfStreamAndCallToRoom({ roomId, userId, peer });
+        loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
       }
     } else {
       sendMessage({
