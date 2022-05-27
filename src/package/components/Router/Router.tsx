@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import queryString from 'query-string';
-import { loadRoom, getSupports, DEFAULT_PARAMS, SESSION_STORAGE_USER_ID } from '../../utils';
+import { loadRoom, getSupports, SESSION_STORAGE_USER_ID } from '../../utils';
 import s from './Router.module.scss';
-import { useUsers } from './Roouter.hooks';
+import { useUsers, useVideoDimensions } from './Roouter.hooks';
 
 const sessionUser = sessionStorage.getItem(SESSION_STORAGE_USER_ID);
 let _sessionUser = '';
@@ -27,6 +27,7 @@ function Router({
   secure?: boolean;
   debug?: 0 | 1 | 2 | 3;
 }) {
+  const container = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const _location = useLocation();
   const location = { ..._location };
@@ -35,9 +36,7 @@ function Router({
   const { userId } = useMemo(() => queryString.parse(search.replace('?', '')), [search]) as {
     userId: string | undefined;
   };
-  const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
   const [started, setStarted] = useState<boolean>(false);
-  const [names, setNames] = useState<string[]>(['1', '2']);
 
   const _userId = useMemo(
     () =>
@@ -55,16 +54,14 @@ function Router({
     _sessionUser = _userId;
   }
 
-  const { users, streams } = useUsers();
+  const { users, streams, width } = useUsers({ container });
+
+  const setVideoDimensions = useVideoDimensions({ width });
 
   /**
    * Check supports
    */
   useEffect(() => {
-    setParams({
-      width: 200,
-      height: 300,
-    });
     setStarted(true);
   }, [pathname]);
 
@@ -95,16 +92,15 @@ function Router({
   const connectLink = `${window.location.origin}/${pathname}`;
   return (
     <div className={s.wrapper}>
-      <div className={s.container} id={cId}>
+      <div className={s.container} id={cId} ref={container}>
         {users.map((item) => (
           <video
             key={item}
-            width={params.width}
-            height={params.height}
             ref={streams[item]?.ref}
             id={item}
             title={item}
             autoPlay
+            onPlaying={setVideoDimensions}
           />
         ))}
       </div>

@@ -68,25 +68,24 @@ export const saveUsers = ({ users }: { users: string[] }): void => {
 };
 
 export const getWidthOfItem = ({
+  length,
   container,
 }: {
-  container: Element;
-}): { width: number; items: number } => {
-  const {
-    children: { length },
-  } = container;
-  const { width, height: outerHeight } = container.getBoundingClientRect();
-  const height = outerHeight - (outerHeight / 100) * 10;
+  length: number;
+  container: React.RefObject<HTMLDivElement>;
+}): number => {
+  const { current } = container;
   let a = 0;
-  if (length) {
-    const S = width * height;
-    const s = Math.ceil(S / length);
-    a = Math.sqrt(s);
-    // eslint-disable-next-line no-nested-ternary
-    a = a > height ? height : a > width ? width : a;
+  if (current) {
+    const { width, height: outerHeight } = current.getBoundingClientRect();
+    const height = outerHeight - (outerHeight / 100) * 10;
+    if (length) {
+      const S = width * height;
+      const s = Math.ceil(S / length);
+      a = Math.sqrt(s);
+      // eslint-disable-next-line no-nested-ternary
+      a = a > height ? height : a > width ? width : a - 50;
+    }
   }
-  return {
-    width: a,
-    items: length,
-  };
+  return Math.ceil(a);
 };
