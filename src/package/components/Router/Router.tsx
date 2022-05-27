@@ -117,7 +117,6 @@ function Router({
       peer,
       userId: _userId,
       roomId: pathname,
-      shareScreen,
     });
   }, [restart]);
 

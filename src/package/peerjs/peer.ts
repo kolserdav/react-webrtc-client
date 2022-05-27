@@ -434,21 +434,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 	 * @param options for specifying details about Peer Connection
 	 */
 	connect(peer: string, options: PeerConnectOption = {}): DataConnection | null {
-		/*
-		if (this.disconnected) {
-			logger.warn(
-				"You cannot connect to a new Peer because you called " +
-					".disconnect() on this Peer and ended your connection with the " +
-					"server. You can create a new Peer to reconnect, or call reconnect " +
-					"on this peer if you believe its ID to still be available.",
-			);
-			this.emitError(
-				PeerErrorType.Disconnected,
-				"Cannot connect to new Peer after disconnecting from server.",
-			);
-			return null;
-		}
-		*/
+
 		const dataConnection = new DataConnection(peer, this, options);
 		this._addConnection(peer, dataConnection);
 		return dataConnection;
@@ -465,20 +451,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 		stream: MediaStream,
 		options: CallOption = {},
 	): MediaConnection | null {
-		/*
-		if (this.disconnected) {
-			logger.warn(
-				"You cannot connect to a new Peer because you called " +
-					".disconnect() on this Peer and ended your connection with the " +
-					"server. You can create a new Peer to reconnect.",
-			);
-			this.emitError(
-				PeerErrorType.Disconnected,
-				"Cannot connect to new Peer after disconnecting from server.",
-			);
-			return null;
-		}
-		*/
+
 		if (!stream) {
 			logger.error(
 				"To call a peer, you must provide a stream from your browser's `getUserMedia`.",
