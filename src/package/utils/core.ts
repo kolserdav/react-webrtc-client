@@ -177,6 +177,21 @@ const dropUser = ({ roomId, userId, peer }: { roomId: string; userId: string; pe
   });
 };
 
+const empptyRoommHandler = ({ peer, roomId }: { peer: Peer; roomId: string }) => {
+  if (users.length === 1) {
+    setTimeout(() => {
+      if (users.length === 1) {
+        sendMessage({
+          type: 'dropuser',
+          id: `dropuser_${roomId}`,
+          peer,
+          value: [roomId],
+        });
+      }
+    }, 3000);
+  }
+};
+
 export const loadRoom = async ({
   roomId,
   userId,
@@ -200,18 +215,7 @@ export const loadRoom = async ({
   peer.on('open', (id) => {
     if (roomId) {
       setInterval(() => {
-        if (users.length === 1) {
-          setTimeout(() => {
-            if (users.length === 1) {
-              sendMessage({
-                type: 'dropuser',
-                id: `dropuser_${roomId}`,
-                peer,
-                value: [roomId],
-              });
-            }
-          }, 3000);
-        }
+        empptyRoommHandler({ peer, roomId });
       }, 2000);
     }
     // Listen incoming call
@@ -254,10 +258,7 @@ export const loadRoom = async ({
       });
       conn.on('disconnected', (_id) => {
         dropUser({ userId: guestId, peer, roomId });
-        console.log(users);
-        if (users.length === 1) {
-          window.close();
-        }
+        empptyRoommHandler({ roomId, peer });
       });
       const _id = conn.peer;
       // Listen room messages
