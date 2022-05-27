@@ -43,7 +43,7 @@ export const useVideoDimensions = ({
         requestAnimationFrame(() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { target }: { target: HTMLVideoElement } = e as any;
-          const { width, cols } = getWidthOfItem({ length, container });
+          const { width, cols, rows } = getWidthOfItem({ length, container });
           const { videoHeight, videoWidth } = target;
           const coeff = videoWidth / videoHeight;
           if (videoHeight < videoWidth) {
@@ -55,7 +55,8 @@ export const useVideoDimensions = ({
           }
           target.parentElement?.parentElement?.setAttribute(
             'style',
-            `grid-template-columns: repeat(${cols}, auto)`
+            `grid-template-columns: repeat(${cols}, auto);
+              grid-template-rows: repeat(${rows}, auto);`
           );
         });
       }

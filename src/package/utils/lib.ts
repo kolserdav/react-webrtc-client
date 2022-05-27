@@ -81,35 +81,37 @@ export const getWidthOfItem = ({
     rows: 1,
   };
   if (current) {
-    const { width, height: outerHeight } = current.getBoundingClientRect();
-    const height = outerHeight - (outerHeight / 100) * 10;
+    const { width, height } = current.getBoundingClientRect();
     if (length) {
+      const horizontal = width > height;
       switch (length) {
         case 2:
-          dims = width > height ? { cols: 2, rows: 1 } : { cols: 1, rows: 2 };
+          dims = horizontal ? { cols: 2, rows: 1 } : { cols: 1, rows: 2 };
           break;
         case 3:
-          dims = width > height ? { cols: 3, rows: 1 } : { cols: 1, rows: 3 };
+          dims = horizontal ? { cols: 3, rows: 1 } : { cols: 1, rows: 3 };
           break;
         case 4:
           dims = { cols: 2, rows: 2 };
           break;
         case 5:
-          dims = width > height ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
+          dims = horizontal ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
           break;
         case 6:
-          dims = width > height ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
+          dims = horizontal ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
           break;
         default:
         // TODO other counts
       }
       const w = width / dims.cols;
       const h = height / dims.rows;
-      a = width > height ? h : w;
+      console.log(w, h);
+      a = width > height ? w : h;
     }
   }
   return {
     width: Math.ceil(a),
     cols: dims.cols,
+    rows: dims.rows,
   };
 };
