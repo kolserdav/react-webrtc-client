@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { store, getWidthOfItem } from '../../utils';
 
-export function useUsers({ container }: { container: React.RefObject<HTMLDivElement> }) {
+export function useUsers() {
   const [users, setUsers] = useState<string[]>([]);
   const [streams, setStreams] = useState<
     Record<string, { ref: React.LegacyRef<HTMLVideoElement> | undefined }>
   >({});
-  const [width, setWidth] = useState<number>(200);
-  const [cols, setCols] = useState<number>(1);
   useEffect(() => {
     const { added } = store.getState();
     if (added) {
@@ -20,9 +18,6 @@ export function useUsers({ container }: { container: React.RefObject<HTMLDivElem
       if (type === 'added-user' && _added) {
         setUsers(_added.users);
         setStreams(_added.streams);
-        const dims = getWidthOfItem({ length: _added.users.length, container });
-        setCols(dims.cols);
-        setWidth(dims.width);
       }
     });
     return () => {
@@ -30,20 +25,25 @@ export function useUsers({ container }: { container: React.RefObject<HTMLDivElem
     };
   }, [users]);
 
-  return { users, streams, width, cols };
+  return { users, streams };
 }
 
-export const useVideoDimensions = ({ width }: { width: number }) => {
+export const useVideoDimensions = ({
+  length,
+  container,
+}: {
+  length: number;
+  container: React.RefObject<HTMLDivElement>;
+}) => {
   let time = 0;
-
   return useCallback(
     (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
       time++;
       if (time % 5 === 0) {
         requestAnimationFrame(() => {
-          console.log(width);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { target }: { target: HTMLVideoElement } = e as any;
+          const { width, cols } = getWidthOfItem({ length, container });
           const { videoHeight, videoWidth } = target;
           const coeff = videoWidth / videoHeight;
           if (videoHeight < videoWidth) {
@@ -53,9 +53,10 @@ export const useVideoDimensions = ({ width }: { width: number }) => {
             target.setAttribute('width', (width * coeff).toString());
             target.setAttribute('height', width.toString());
           }
+          target.setAttribute('style', `grid-template-columns: repeat(${cols}, auto)`);
         });
       }
     },
-    [width]
+    [length]
   );
 };

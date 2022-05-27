@@ -54,9 +54,9 @@ function Router({
     _sessionUser = _userId;
   }
 
-  const { users, streams, width, cols } = useUsers({ container });
+  const { users, streams } = useUsers();
 
-  const setVideoDimensions = useVideoDimensions({ width });
+  const setVideoDimensions = useVideoDimensions({ container, length: users.length });
 
   /**
    * Check supports
@@ -92,12 +92,7 @@ function Router({
   const connectLink = `${window.location.origin}/${pathname}`;
   return (
     <div className={s.wrapper}>
-      <div
-        className={s.container}
-        id={cId}
-        ref={container}
-        style={{ gridTemplateColumns: `repeat(${cols}, auto)` }}
-      >
+      <div className={s.container} id={cId} ref={container}>
         {users.map((item) => (
           <div key={item} className={s.video}>
             <video
