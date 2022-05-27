@@ -54,7 +54,7 @@ function Router({
     _sessionUser = _userId;
   }
 
-  const { users, streams, width } = useUsers({ container });
+  const { users, streams, width, cols } = useUsers({ container });
 
   const setVideoDimensions = useVideoDimensions({ width });
 
@@ -92,16 +92,22 @@ function Router({
   const connectLink = `${window.location.origin}/${pathname}`;
   return (
     <div className={s.wrapper}>
-      <div className={s.container} id={cId} ref={container}>
+      <div
+        className={s.container}
+        id={cId}
+        ref={container}
+        style={{ gridTemplateColumns: `repeat(${cols}, auto)` }}
+      >
         {users.map((item) => (
-          <video
-            key={item}
-            ref={streams[item]?.ref}
-            id={item}
-            title={item}
-            autoPlay
-            onPlaying={setVideoDimensions}
-          />
+          <div key={item} className={s.video}>
+            <video
+              ref={streams[item]?.ref}
+              id={item}
+              title={item}
+              autoPlay
+              onTimeUpdate={setVideoDimensions}
+            />
+          </div>
         ))}
       </div>
       <div className={s.actions}>

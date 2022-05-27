@@ -7,6 +7,7 @@ export function useUsers({ container }: { container: React.RefObject<HTMLDivElem
     Record<string, { ref: React.LegacyRef<HTMLVideoElement> | undefined }>
   >({});
   const [width, setWidth] = useState<number>(200);
+  const [cols, setCols] = useState<number>(1);
   useEffect(() => {
     const { added } = store.getState();
     if (added) {
@@ -19,7 +20,9 @@ export function useUsers({ container }: { container: React.RefObject<HTMLDivElem
       if (type === 'added-user' && _added) {
         setUsers(_added.users);
         setStreams(_added.streams);
-        setWidth(getWidthOfItem({ length: _added.users.length, container }));
+        const dims = getWidthOfItem({ length: _added.users.length, container });
+        setCols(dims.cols);
+        setWidth(dims.width);
       }
     });
     return () => {
@@ -27,26 +30,32 @@ export function useUsers({ container }: { container: React.RefObject<HTMLDivElem
     };
   }, [users]);
 
-  return { users, streams, width };
+  return { users, streams, width, cols };
 }
 
-export const useVideoDimensions = ({ width }: { width: number }) =>
-  useCallback(
+export const useVideoDimensions = ({ width }: { width: number }) => {
+  let time = 0;
+
+  return useCallback(
     (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
-      requestAnimationFrame(() => {
-        console.log(width);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { target }: { target: HTMLVideoElement } = e as any;
-        const { videoHeight, videoWidth } = target;
-        const coeff = videoWidth / videoHeight;
-        if (videoHeight < videoWidth) {
-          target.setAttribute('width', width.toString());
-          target.setAttribute('height', (width / coeff).toString());
-        } else {
-          target.setAttribute('width', (width * coeff).toString());
-          target.setAttribute('height', width.toString());
-        }
-      });
+      time++;
+      if (time % 5 === 0) {
+        requestAnimationFrame(() => {
+          console.log(width);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { target }: { target: HTMLVideoElement } = e as any;
+          const { videoHeight, videoWidth } = target;
+          const coeff = videoWidth / videoHeight;
+          if (videoHeight < videoWidth) {
+            target.setAttribute('width', width.toString());
+            target.setAttribute('height', (width / coeff).toString());
+          } else {
+            target.setAttribute('width', (width * coeff).toString());
+            target.setAttribute('height', width.toString());
+          }
+        });
+      }
     },
     [width]
   );
+};

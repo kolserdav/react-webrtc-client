@@ -73,19 +73,36 @@ export const getWidthOfItem = ({
 }: {
   length: number;
   container: React.RefObject<HTMLDivElement>;
-}): number => {
+}) => {
   const { current } = container;
   let a = 0;
+  let dims = {
+    cols: 1,
+    rows: 1,
+  };
   if (current) {
     const { width, height: outerHeight } = current.getBoundingClientRect();
     const height = outerHeight - (outerHeight / 100) * 10;
     if (length) {
-      const S = width * height;
-      const s = Math.ceil(S / length);
-      a = Math.sqrt(s);
-      // eslint-disable-next-line no-nested-ternary
-      a = a > height ? height : a > width ? width : a - 50;
+      switch (length) {
+        case 2:
+          dims = width > height ? { cols: 2, rows: 1 } : { cols: 1, rows: 2 };
+          break;
+        case 3:
+          dims = width > height ? { cols: 3, rows: 1 } : { cols: 2, rows: 2 };
+          break;
+        case 4:
+          dims = { cols: 2, rows: 2 };
+          break;
+        default:
+      }
+      const w = width / dims.cols;
+      const h = height / dims.rows;
+      a = width > height ? h : w;
     }
   }
-  return Math.ceil(a);
+  return {
+    width: Math.ceil(a),
+    cols: dims.cols,
+  };
 };
