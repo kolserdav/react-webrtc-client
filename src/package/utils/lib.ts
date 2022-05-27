@@ -105,7 +105,6 @@ export const getWidthOfItem = ({
       }
       const w = width / dims.cols;
       const h = height / dims.rows;
-      console.log(w, h);
       a = width > height ? w : h;
     }
   }

@@ -3,7 +3,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import queryString from 'query-string';
 import { loadRoom, getSupports, SESSION_STORAGE_USER_ID } from '../../utils';
 import s from './Router.module.scss';
-import { useUsers, useVideoDimensions } from './Roouter.hooks';
+import {
+  useOnclickClose,
+  useOnClickVideo,
+  usePressEscape,
+  useUsers,
+  useVideoDimensions,
+} from './Roouter.hooks';
+import CloseButton from '../CloseButton/CloseButton';
 
 const sessionUser = sessionStorage.getItem(SESSION_STORAGE_USER_ID);
 let _sessionUser = '';
@@ -57,6 +64,9 @@ function Router({
   const { users, streams } = useUsers();
 
   const setVideoDimensions = useVideoDimensions({ container, length: users.length });
+  const onClickVideo = useOnClickVideo();
+  const onClickClose = useOnclickClose({ container, length: users.length });
+  const onPressEscape = usePressEscape();
 
   /**
    * Check supports
@@ -93,14 +103,16 @@ function Router({
   return (
     <div className={s.wrapper}>
       <div className={s.container} id={cId} ref={container}>
-        {users.map((item) => (
+        {users.map((item, index) => (
           <div key={item} className={s.video}>
+            <CloseButton onClick={onClickClose} onKeyDown={onPressEscape} tabindex={index} />
             <video
               ref={streams[item]?.ref}
               id={item}
               title={item}
               autoPlay
               onTimeUpdate={setVideoDimensions}
+              onClick={onClickVideo}
             />
           </div>
         ))}

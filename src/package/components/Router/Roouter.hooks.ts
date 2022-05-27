@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { store, getWidthOfItem } from '../../utils';
+import s from './Router.module.scss';
+import c from '../CloseButton/CloseButton.module.scss';
 
 export function useUsers() {
   const [users, setUsers] = useState<string[]>([]);
@@ -43,24 +45,68 @@ export const useVideoDimensions = ({
         requestAnimationFrame(() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { target }: { target: HTMLVideoElement } = e as any;
-          const { width, cols, rows } = getWidthOfItem({ length, container });
-          const { videoHeight, videoWidth } = target;
-          const coeff = videoWidth / videoHeight;
-          if (videoHeight < videoWidth) {
-            target.setAttribute('width', width.toString());
-            target.setAttribute('height', (width / coeff).toString());
-          } else {
-            target.setAttribute('width', (width * coeff).toString());
-            target.setAttribute('height', width.toString());
-          }
-          target.parentElement?.parentElement?.setAttribute(
-            'style',
-            `grid-template-columns: repeat(${cols}, auto);
+          if (target.getAttribute('data') !== 'full') {
+            const { width, cols, rows } = getWidthOfItem({ length, container });
+            const { videoHeight, videoWidth } = target;
+            const coeff = videoWidth / videoHeight;
+            if (videoHeight < videoWidth) {
+              target.setAttribute('width', width.toString());
+              target.setAttribute('height', (width / coeff).toString());
+            } else {
+              target.setAttribute('width', (width * coeff).toString());
+              target.setAttribute('height', width.toString());
+            }
+            target.parentElement?.parentElement?.setAttribute(
+              'style',
+              `grid-template-columns: repeat(${cols}, auto);
               grid-template-rows: repeat(${rows}, auto);`
-          );
+            );
+          }
         });
       }
     },
     [length]
   );
+};
+
+export const useOnClickVideo = () => (e: React.MouseEvent<HTMLVideoElement, MouseEvent>) => {
+  const { target }: { target: HTMLVideoElement } = e as any;
+  const { videoWidth, videoHeight } = target;
+  const { outerWidth } = window;
+  const coeff = videoWidth / videoHeight;
+  const height = outerWidth / coeff;
+  target.parentElement?.classList.add(s.video__fixed);
+  target.parentElement?.firstElementChild?.classList.add(c.open);
+  target.setAttribute('data', 'full');
+  target.setAttribute('width', outerWidth.toString());
+  target.setAttribute('height', height.toString());
+};
+
+export const useOnclickClose =
+  ({ length, container }: { length: number; container: React.RefObject<HTMLDivElement> }) =>
+  (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const { width } = getWidthOfItem({ length, container });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { target }: any = e;
+    const { nodeName } = target;
+    const button: HTMLButtonElement =
+      nodeName === 'path'
+        ? target.parentElement?.parentElement
+        : nodeName === 'svg'
+        ? target.parentElement
+        : target;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const video: HTMLVideoElement = button.nextElementSibling as any;
+    const { videoWidth, videoHeight } = video;
+    const coeff = videoWidth / videoHeight;
+    const height = width / coeff;
+    video.parentElement?.classList.remove(s.video__fixed);
+    button.classList.remove(c.open);
+    video.setAttribute('data', '');
+    video.setAttribute('width', width.toString());
+    video.setAttribute('height', height.toString());
+  };
+
+export const usePressEscape = () => (e: React.KeyboardEvent<HTMLDivElement>) => {
+  /** TODO */
 };
