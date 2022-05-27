@@ -89,12 +89,19 @@ export const getWidthOfItem = ({
           dims = width > height ? { cols: 2, rows: 1 } : { cols: 1, rows: 2 };
           break;
         case 3:
-          dims = width > height ? { cols: 3, rows: 1 } : { cols: 2, rows: 2 };
+          dims = width > height ? { cols: 3, rows: 1 } : { cols: 1, rows: 3 };
           break;
         case 4:
           dims = { cols: 2, rows: 2 };
           break;
+        case 5:
+          dims = width > height ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
+          break;
+        case 6:
+          dims = width > height ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
+          break;
         default:
+        // TODO other counts
       }
       const w = width / dims.cols;
       const h = height / dims.rows;

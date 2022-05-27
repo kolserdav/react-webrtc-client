@@ -53,7 +53,10 @@ export const useVideoDimensions = ({
             target.setAttribute('width', (width * coeff).toString());
             target.setAttribute('height', width.toString());
           }
-          target.setAttribute('style', `grid-template-columns: repeat(${cols}, auto)`);
+          target.parentElement?.parentElement?.setAttribute(
+            'style',
+            `grid-template-columns: repeat(${cols}, auto)`
+          );
         });
       }
     },
