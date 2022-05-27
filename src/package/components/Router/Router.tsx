@@ -1,17 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import queryString from 'query-string';
-import {
-  loadRoom,
-  getSupports,
-  DEFAULT_PARAMS,
-  SESSION_STORAGE_USER_ID,
-  store,
-  Video,
-  getRefs,
-  getWidthOfItem,
-} from '../../utils';
+import { loadRoom, getSupports, DEFAULT_PARAMS, SESSION_STORAGE_USER_ID } from '../../utils';
 import s from './Router.module.scss';
+import { useUsers } from './Roouter.hooks';
 
 const sessionUser = sessionStorage.getItem(SESSION_STORAGE_USER_ID);
 let _sessionUser = '';
@@ -44,10 +36,6 @@ function Router({
     userId: string | undefined;
   };
   const [params, setParams] = useState<typeof DEFAULT_PARAMS>(DEFAULT_PARAMS);
-  const [users, setUsers] = useState<string[]>([]);
-  const [streams, setStreams] = useState<
-    Record<string, { stream: MediaStream; ref: React.LegacyRef<HTMLVideoElement> | undefined }>
-  >({});
   const [started, setStarted] = useState<boolean>(false);
   const [names, setNames] = useState<string[]>(['1', '2']);
 
@@ -67,46 +55,7 @@ function Router({
     _sessionUser = _userId;
   }
 
-  useEffect(() => {
-    const clearSubs = store.subscribe(() => {
-      if (started) {
-        setStarted(false);
-      }
-      const { type, added, deleted } = store.getState();
-      let _users: typeof users = [];
-      // TODO fixed reload guest
-      if (type === 'added-user' && added) {
-        _users = users.map((item) => item);
-        if (users.filter((item) => item === added.id).length === 0 && !/^0/.test(added.id)) {
-          _users.push(added.id);
-          setUsers(_users);
-        }
-        if (_users.indexOf(added.id) !== -1) {
-          const _changed: any = {};
-          _changed[added.id] = {
-            ref: (node: HTMLVideoElement) => {
-              // eslint-disable-next-line no-param-reassign
-              if (node) node.srcObject = added.stream;
-            },
-          };
-          const _streams = { ...streams, ..._changed };
-          setStreams(_streams);
-        }
-      } else if (type === 'deleted' && deleted) {
-        _users = users.filter((item) => item !== deleted);
-        setUsers(_users);
-      }
-      const { width, items } = getWidthOfItem({ container: document.body });
-      /*
-      setParams({
-        width,
-        height: width,
-      }); */
-    });
-    return () => {
-      clearSubs();
-    };
-  }, [users]);
+  const { users, streams } = useUsers();
 
   /**
    * Check supports

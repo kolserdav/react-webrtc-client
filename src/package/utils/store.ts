@@ -7,8 +7,8 @@ type StoreType = 'initial' | 'added-user' | 'deleted';
 interface Reducer {
   type: StoreType;
   added?: {
-    id: string;
-    stream: MediaStream;
+    users: string[];
+    streams: Record<string, { ref: React.LegacyRef<HTMLVideoElement> | undefined }>;
   };
   deleted?: string;
 }
@@ -19,11 +19,13 @@ function reducer(
   action: Reducer
 ) {
   switch (action.type) {
-    default:
+    case 'added-user':
       return action;
+    default:
+      return state;
   }
 }
 
-const store = createStore(reducer);
+const store = createStore(reducer, { type: 'initial', added: { users: [], streams: {} } });
 
 export default store;

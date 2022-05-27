@@ -2,7 +2,7 @@
 import React from 'react';
 import { Peer, util, DataConnection } from './peer';
 import Console from './console';
-import { sendMessage, removeDisconnected, saveUsers, getSessionUsers } from './lib';
+import { sendMessage, saveUsers, getSessionUsers } from './lib';
 import store from './store';
 
 const _users = getSessionUsers();
@@ -37,14 +37,48 @@ const getPeer = ({
   return peer;
 };
 
+export const removeDisconnected = ({ userId }: { userId: string }) => {
+  const state = store.getState();
+  const { added } = state;
+  if (added) {
+    const usersL = added.users.filter((item) => item !== userId);
+    delete added.streams[userId];
+    store.dispatch({
+      type: 'added-user',
+      added: {
+        users: usersL,
+        streams: added.streams,
+      },
+    });
+  }
+};
+
 export const addVideoStream = ({ stream, id }: { stream: MediaStream; id: string }): void => {
-  store.dispatch({
-    type: 'added-user',
-    added: {
-      id,
-      stream,
-    },
-  });
+  const state = store.getState();
+  const { added } = state;
+  if (added) {
+    const usersL = added.users.map((item) => item);
+    if (added.users.filter((item) => item === id).length === 0 && !/^0/.test(id)) {
+      usersL.push(id);
+    }
+    const _changed: Record<string, { ref: React.LegacyRef<HTMLVideoElement> | undefined }> = {};
+    _changed[id] = {
+      ref: (node: HTMLVideoElement) => {
+        // eslint-disable-next-line no-param-reassign
+        if (node) node.srcObject = stream;
+      },
+    };
+    const _streams = { ...added.streams, ..._changed };
+    store.dispatch({
+      type: 'added-user',
+      added: {
+        users: usersL,
+        streams: _streams,
+      },
+    });
+  } else {
+    Console.warn('Added list not found in store');
+  }
 };
 
 const callToRoom = ({

@@ -28,7 +28,7 @@
     "prettier/prettier": 1,
     "react/jsx-filename-extension": [
       1,
-      { "extensions": [".tsx", ".jsx", ".css", ".scss", ".esm"] }
+      { "extensions": [".tsx", ".jsx", ".css", ".scss", ".esm", ".hooks"] }
     ],
     "import/no-unresolved": 0,
     "import/extensions": [
@@ -36,7 +36,8 @@
       "never",
       {
         "ts": "always",
-        "tsx": "always"
+        "tsx": "always",
+        "hooks": "always"
       }
     ],
     "no-unused-vars": 1,

@@ -40,13 +40,6 @@ export const getSessionUsers = (): string[] | null => {
   return null;
 };
 
-export const removeDisconnected = ({ userId }: { userId: string }) => {
-  store.dispatch({
-    type: 'deleted',
-    deleted: userId,
-  });
-};
-
 export const sendMessage = async ({
   peer,
   id,
