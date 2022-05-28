@@ -44,7 +44,7 @@
     "start": "react-scripts start",
     "deploy": "npm run build && react-scripts build",
     "lint": "eslint -c .eslintrc src/package && stylelint --config .stylelintrc src/package",
-    "build": "npm run lint && node -e \"fs.rmSync('src/dist', { recursive: true, force: true })\" && microbundle --format es ./src/package/Main.tsx",
+    "build": "react-scripts-build",
     "dev": "concurrently  \"npm run start\" \"microbundle --format es watch ./src/package/Main.tsx\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
