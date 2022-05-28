@@ -10,6 +10,7 @@ const users: string[] = _users || [];
 const streams: Record<string, MediaStream> = {};
 
 let isRoom = false;
+let loadedRoom = false;
 
 export const getSupports = () => util.supports;
 
@@ -94,16 +95,12 @@ const callToRoom = ({
   // If guest that call to room
   const call = peer.call(roomId, stream);
   if (call) {
-    let two = 2;
     call.on('stream', (remoteStream) => {
       // Runing twice anytime
-      two++;
-      if (two % 2 === 0) {
-        addVideoStream({
-          stream: remoteStream,
-          id: roomId,
-        });
-      }
+      addVideoStream({
+        stream: remoteStream,
+        id: roomId,
+      });
     });
     // Reconnect to room
     call.on('close', () => {
@@ -117,6 +114,7 @@ const callToRoom = ({
           });
         }, 1000);
       } else {
+        // TODO room is disconnected
         console.log(87, users);
       }
     });
@@ -168,6 +166,7 @@ const removeOneUser = ({ userId }: { userId: string }) => {
   if (userIndex !== -1) {
     users.splice(userIndex, 1);
     saveUsers({ users });
+    delete streams[userId];
   }
 };
 
@@ -194,7 +193,7 @@ const dropUser = ({ roomId, userId, peer }: { roomId: string; userId: string; pe
 const emptyRoomHandler = ({ peer, roomId }: { peer: Peer; roomId: string }) => {
   if (users.length === 1) {
     setTimeout(() => {
-      if (users.length === 1) {
+      if (users.length === 0) {
         sendMessage({
           type: 'dropuser',
           id: `dropuser_${roomId}`,
@@ -226,19 +225,22 @@ export const loadRoom = async ({
     }
     // Listen incoming call
     peer.on('call', (call) => {
+      call.answer(null);
       if (isRoom) {
-        call.answer(null);
         call.on('stream', (stream) => {
+          // save user stream
           streams[call.peer] = stream;
           addVideoStream({
             stream,
             id: call.peer,
           });
+          // pass user stream to other users
           users.forEach((item) => {
             if (item !== roomId && item !== call.peer) {
               peer.call(item, streams[call.peer], { metadata: { id: call.peer } });
             }
           });
+          // pass streams from other users to called user
           users.forEach((item) => {
             if (item !== roomId && item !== call.peer) {
               peer.call(call.peer, streams[item], { metadata: { id: item } });
@@ -246,19 +248,13 @@ export const loadRoom = async ({
           });
         });
       } else {
-        call.answer(null);
-        let two = 2;
         call.on('stream', (remoteStream, connectionId) => {
-          // Runing twice anytime
-          two++;
-          if (two % 2 === 0) {
-            // Check if user id but not empty room stream
-            if (/^\d{13}$/.test(connectionId)) {
-              addVideoStream({
-                stream: remoteStream,
-                id: connectionId,
-              });
-            }
+          // Check if user id but not empty room stream
+          if (/^\d{13}$/.test(connectionId)) {
+            addVideoStream({
+              stream: remoteStream,
+              id: connectionId,
+            });
           }
         });
       }
@@ -334,9 +330,12 @@ export const loadRoom = async ({
     });
     // Connect to room
     if (isRoom) {
-      if (getUniqueUser({ userId, list: users })) {
+      if (getUniqueUser({ userId, list: users }) && userId !== roomId) {
         users.push(userId);
         saveUsers({ users });
+      }
+      if (!loadedRoom) {
+        loadedRoom = true;
         loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
       }
     } else {
