@@ -7,6 +7,7 @@ import store from './store';
 
 const _users = getSessionUsers();
 const users: string[] = _users || [];
+const streams: Record<string, MediaStream> = {};
 
 let isRoom = false;
 
@@ -253,31 +254,46 @@ export const loadRoom = async ({
     }
     // Listen incoming call
     peer.on('call', (call) => {
-      navigator.mediaDevices[shareScreen ? 'getDisplayMedia' : 'getUserMedia']({
-        video: true,
-        audio: true,
-      })
-        .then((stream) => {
-          call.answer(stream);
-          let two = 2;
-          call.on('stream', (remoteStream) => {
-            // Runing twice anytime
-            two++;
-            if (two % 2 === 0) {
+      if (isRoom) {
+        let two = 2;
+        call.answer(null);
+        call.on('stream', (stream) => {
+          two++;
+          if (two % 2 === 0) {
+            streams[call.peer] = stream;
+            addVideoStream({
+              stream,
+              id: call.peer,
+            });
+            users.forEach((item) => {
+              if (item !== roomId && item !== call.peer) {
+                peer.call(item, streams[call.peer], { connectionId: call.peer });
+              }
+            });
+            users.forEach((item) => {
+              if (item !== roomId && item !== call.peer) {
+                peer.call(call.peer, streams[item], { connectionId: item });
+              }
+            });
+          }
+        });
+      } else {
+        call.answer(null);
+        let two = 2;
+        call.on('stream', (remoteStream, connectionId) => {
+          // Runing twice anytime
+          two++;
+          if (two % 2 === 0) {
+            // Check if user id but not empty room stream
+            if (/^\d{13}$/.test(connectionId)) {
               addVideoStream({
                 stream: remoteStream,
-                id: call.peer,
+                id: connectionId,
               });
             }
-          });
-        })
-        .catch((err) => {
-          if (err.name === 'NotAllowedError') {
-            // eslint-disable-next-line no-alert
-            alert(`Error ${err.name}: ${err.message}`);
           }
-          Console.error('Failed to get local stream', err);
         });
+      }
     });
     // Listen room connections
     peer.on('connection', (conn) => {

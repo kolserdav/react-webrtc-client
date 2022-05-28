@@ -26,4 +26,5 @@ export interface CallOption {
 	metadata?: any;
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	sdpTransform?: Function;
+	connectionId?: string;
 }

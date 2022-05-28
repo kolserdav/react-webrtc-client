@@ -45,7 +45,7 @@ export class MediaConnection extends BaseConnection {
 			this.options.connectionId ||
 			MediaConnection.ID_PREFIX + util.randomToken();
 
-		this._negotiator = new Negotiator(this);
+		this._negotiator = new Negotiator(this, this.options.connectionId);
 
 
 		if (this._localStream) {
@@ -56,11 +56,11 @@ export class MediaConnection extends BaseConnection {
 		}
 	}
 
-	addStream(remoteStream: MediaStream) {
+	addStream(remoteStream: MediaStream, id: string) {
 		logger.log("Receiving stream", remoteStream);
 
 		this._remoteStream = remoteStream;
-		super.emit(ConnectionEventType.Stream, remoteStream); // Should we call this `open`?
+		super.emit(ConnectionEventType.Stream, remoteStream, id); // Should we call this `open`?
 	}
 
 	handleMessage(message: ServerMessage): void {
@@ -90,7 +90,7 @@ export class MediaConnection extends BaseConnection {
 		}
 	}
 
-	answer(stream: MediaStream, options: AnswerOption = {}): void {
+	answer(stream: MediaStream | null, options: AnswerOption = {}): void {
 		if (this._localStream) {
 			logger.warn(
 				"Local stream already exists on this MediaConnection. Are you answering a call twice?",

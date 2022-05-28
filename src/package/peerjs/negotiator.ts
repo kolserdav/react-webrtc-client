@@ -18,7 +18,10 @@ import { BaseConnection } from "./baseconnection";
  */
 // eslint-disable-next-line import/prefer-default-export
 export class Negotiator {
-	constructor(readonly connection: BaseConnection) {}
+	id: string;
+	constructor(readonly connection: BaseConnection, id: string) {
+		this.id = id;
+	}
 
 	/** Returns a PeerConnection object set up correctly (for data, media). */
 	startConnection(options: any) {
@@ -444,6 +447,6 @@ export class Negotiator {
 			`add stream ${stream.id} to media connection ${mediaConnection.connectionId}`,
 		);
 
-		mediaConnection.addStream(stream);
+		mediaConnection.addStream(stream, this.id);
 	}
 }

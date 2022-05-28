@@ -91,7 +91,7 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 			logger.warn('Encoding queue is null: 79', this._encodingQueue)
 		}
 
-		this._negotiator = new Negotiator(this);
+		this._negotiator = new Negotiator(this, this.options.connectionId);
 
 		this._negotiator.startConnection(
 			this.options._payload || {
