@@ -45,7 +45,7 @@ export class MediaConnection extends BaseConnection {
 			this.options.connectionId ||
 			MediaConnection.ID_PREFIX + util.randomToken();
 
-		this._negotiator = new Negotiator(this, this.options.connectionId);
+		this._negotiator = new Negotiator(this, options.metadata?.id);
 
 
 		if (this._localStream) {

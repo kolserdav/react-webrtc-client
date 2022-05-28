@@ -1,6 +1,6 @@
 /* eslint-disable import/no-relative-packages */
 import React from 'react';
-import { Peer, util, DataConnection } from './peer';
+import { Peer, util } from './peer';
 import Console from './console';
 import { sendMessage, saveUsers, getSessionUsers } from './lib';
 import store from './store';
@@ -146,7 +146,7 @@ export const loadSelfStreamAndCallToRoom = ({
         stream,
         id: userId,
       });
-      if (roomId !== userId) {
+      if (!isRoom) {
         callToRoom({
           stream,
           peer,
@@ -169,34 +169,6 @@ const removeOneUser = ({ userId }: { userId: string }) => {
     users.splice(userIndex, 1);
     saveUsers({ users });
   }
-};
-
-/**
- * Connect with other users
- */
-const connectWithAll = ({
-  list,
-  peer,
-  userId,
-  conn,
-  shareScreen,
-}: {
-  list: string[];
-  peer: Peer;
-  userId: string;
-  conn: DataConnection;
-  shareScreen: boolean;
-}) => {
-  list.forEach((item) => {
-    if (item !== userId && conn.provider) {
-      loadSelfStreamAndCallToRoom({
-        roomId: item,
-        peer,
-        userId,
-        shareScreen,
-      });
-    }
-  });
 };
 
 const getUniqueUser = ({ userId, list }: { userId: string; list: string[] }) =>
@@ -255,27 +227,23 @@ export const loadRoom = async ({
     // Listen incoming call
     peer.on('call', (call) => {
       if (isRoom) {
-        let two = 2;
         call.answer(null);
         call.on('stream', (stream) => {
-          two++;
-          if (two % 2 === 0) {
-            streams[call.peer] = stream;
-            addVideoStream({
-              stream,
-              id: call.peer,
-            });
-            users.forEach((item) => {
-              if (item !== roomId && item !== call.peer) {
-                peer.call(item, streams[call.peer], { connectionId: call.peer });
-              }
-            });
-            users.forEach((item) => {
-              if (item !== roomId && item !== call.peer) {
-                peer.call(call.peer, streams[item], { connectionId: item });
-              }
-            });
-          }
+          streams[call.peer] = stream;
+          addVideoStream({
+            stream,
+            id: call.peer,
+          });
+          users.forEach((item) => {
+            if (item !== roomId && item !== call.peer) {
+              peer.call(item, streams[call.peer], { metadata: { id: call.peer } });
+            }
+          });
+          users.forEach((item) => {
+            if (item !== roomId && item !== call.peer) {
+              peer.call(call.peer, streams[item], { metadata: { id: item } });
+            }
+          });
         });
       } else {
         call.answer(null);
@@ -329,12 +297,10 @@ export const loadRoom = async ({
             });
             break;
           case 'onconnect':
-            // Call from new guest to other guests
-            connectWithAll({
+            loadSelfStreamAndCallToRoom({
+              roomId,
               peer,
               userId,
-              list: value,
-              conn,
               shareScreen,
             });
             break;

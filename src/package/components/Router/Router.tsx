@@ -44,15 +44,15 @@ function Router({
     userId: string | undefined;
   };
 
+  const isRoom = location.search === '?room=1';
+
   const [shareScreen, setShareScreen] = useState<boolean>(false);
   const [supported, setSupported] = useState<boolean>(false);
   const [restart, setRestart] = useState<boolean>(false);
 
   const _userId = useMemo(
     () =>
-      location.search === '?room=1'
-        ? pathname
-        : userId || sessionUser || _sessionUser || new Date().getTime().toString(),
+      isRoom ? pathname : userId || sessionUser || _sessionUser || new Date().getTime().toString(),
     []
   );
   const cId = _userId.replace(/^\d/, '');
@@ -66,9 +66,12 @@ function Router({
 
   const { users, streams } = useUsers();
 
-  const setVideoDimensions = useVideoDimensions({ container, length: users.length });
+  const setVideoDimensions = useVideoDimensions({
+    container: container.current,
+    length: users.length,
+  });
   const onClickVideo = useOnClickVideo();
-  const onClickClose = useOnclickClose({ container, length: users.length });
+  const onClickClose = useOnclickClose({ container: container.current, length: users.length });
   const onPressEscape = usePressEscape();
   const peer = useMemo(
     () => getPeer({ userId: _userId, path, port, host, debug, secure }),
@@ -112,11 +115,11 @@ function Router({
     if (!supported) {
       return;
     }
-    console.log(1);
     loadRoom({
       peer,
       userId: _userId,
       roomId: pathname,
+      shareScreen,
     });
   }, [restart]);
 

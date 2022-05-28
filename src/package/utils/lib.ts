@@ -73,42 +73,39 @@ export const getWidthOfItem = ({
   coeff,
 }: {
   length: number;
-  container: React.RefObject<HTMLDivElement>;
+  container: HTMLDivElement;
   coeff: number;
 }) => {
-  const { current } = container;
   let a = 0;
   let dims = {
     cols: 1,
     rows: 1,
   };
-  if (current) {
-    const { width, height } = current.getBoundingClientRect();
-    if (length) {
-      const horizontal = width > height;
-      switch (length) {
-        case 2:
-          dims = horizontal ? { cols: 2, rows: 1 } : { cols: 1, rows: 2 };
-          break;
-        case 3:
-          dims = { cols: 2, rows: 2 };
-          break;
-        case 4:
-          dims = { cols: 2, rows: 2 };
-          break;
-        case 5:
-          dims = horizontal ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
-          break;
-        case 6:
-          dims = horizontal ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
-          break;
-        default:
-        // TODO other counts
-      }
-      const w = width / dims.cols;
-      const h = height / dims.rows;
-      a = coeff > 1 ? w : h;
+  const { width, height } = container.getBoundingClientRect();
+  if (length) {
+    const horizontal = width > height;
+    switch (length) {
+      case 2:
+        dims = horizontal ? { cols: 2, rows: 1 } : { cols: 1, rows: 2 };
+        break;
+      case 3:
+        dims = { cols: 2, rows: 2 };
+        break;
+      case 4:
+        dims = { cols: 2, rows: 2 };
+        break;
+      case 5:
+        dims = horizontal ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
+        break;
+      case 6:
+        dims = horizontal ? { cols: 3, rows: 2 } : { cols: 2, rows: 3 };
+        break;
+      default:
+      // TODO other counts
     }
+    const w = width / dims.cols;
+    const h = height / dims.rows;
+    a = coeff > 1 ? w : h;
   }
   return {
     width: Math.ceil(a),

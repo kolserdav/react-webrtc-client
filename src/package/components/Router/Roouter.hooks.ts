@@ -35,7 +35,7 @@ export const useVideoDimensions = ({
   container,
 }: {
   length: number;
-  container: React.RefObject<HTMLDivElement>;
+  container: HTMLDivElement | null;
 }) => {
   let time = 0;
   return useCallback(
@@ -45,11 +45,15 @@ export const useVideoDimensions = ({
         requestAnimationFrame(() => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const { target }: { target: HTMLVideoElement } = e as any;
-          if (target.getAttribute('data') !== 'full') {
+          const _container =
+            target.getAttribute('data') !== 'full'
+              ? container
+              : (target.parentElement as HTMLDivElement);
+          if (_container) {
             const { videoHeight, videoWidth } = target;
             const { width, cols, rows } = getWidthOfItem({
               length,
-              container,
+              container: _container,
               coeff: videoWidth / videoHeight,
             });
             const coeff = videoWidth / videoHeight;
@@ -87,28 +91,30 @@ export const useOnClickVideo = () => (e: React.MouseEvent<HTMLVideoElement, Mous
 };
 
 export const useOnclickClose =
-  ({ length, container }: { length: number; container: React.RefObject<HTMLDivElement> }) =>
+  ({ length, container }: { length: number; container: HTMLDivElement | null }) =>
   (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { target }: any = e;
-    const { nodeName } = target;
-    const button: HTMLButtonElement =
-      nodeName === 'path'
-        ? target.parentElement?.parentElement
-        : nodeName === 'svg'
-        ? target.parentElement
-        : target;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const video: HTMLVideoElement = button.nextElementSibling as any;
-    const { videoWidth, videoHeight } = video;
-    const { width } = getWidthOfItem({ length, container, coeff: videoWidth / videoHeight });
-    const coeff = videoWidth / videoHeight;
-    const height = width / coeff;
-    video.parentElement?.classList.remove(s.video__fixed);
-    button.classList.remove(c.open);
-    video.setAttribute('data', '');
-    video.setAttribute('width', width.toString());
-    video.setAttribute('height', height.toString());
+    if (container) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { target }: any = e;
+      const { nodeName } = target;
+      const button: HTMLButtonElement =
+        nodeName === 'path'
+          ? target.parentElement?.parentElement
+          : nodeName === 'svg'
+          ? target.parentElement
+          : target;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const video: HTMLVideoElement = button.nextElementSibling as any;
+      const { videoWidth, videoHeight } = video;
+      const { width } = getWidthOfItem({ length, container, coeff: videoWidth / videoHeight });
+      const coeff = videoWidth / videoHeight;
+      const height = width / coeff;
+      video.parentElement?.classList.remove(s.video__fixed);
+      button.classList.remove(c.open);
+      video.setAttribute('data', '');
+      video.setAttribute('width', width.toString());
+      video.setAttribute('height', height.toString());
+    }
   };
 
 export const usePressEscape = () => (e: React.KeyboardEvent<HTMLDivElement>) => {
