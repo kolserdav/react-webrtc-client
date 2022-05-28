@@ -19,6 +19,7 @@ import { BaseConnection } from "./baseconnection";
 // eslint-disable-next-line import/prefer-default-export
 export class Negotiator {
 	id: string;
+
 	constructor(readonly connection: BaseConnection, id: string) {
 		this.id = id;
 	}
@@ -59,7 +60,7 @@ export class Negotiator {
 		logger.log("Creating RTCPeerConnection.");
 
 		const peerConnection = new RTCPeerConnection(
-			this.connection.provider?.options.config,
+			this.connection.provider?.options?.config,
 		);
 
 		this._setupListeners(peerConnection);

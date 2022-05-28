@@ -1,12 +1,11 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import Router from './components/Router/Router';
+import { isProd } from './utils/constants';
 
 /**
  * Main component of library
  */
-
-const isProd = process.env.NODE_ENV === 'production';
 
 function Main() {
   return (
@@ -16,7 +15,7 @@ function Main() {
         host={process.env.REACT_APP_STUN_SERVER as string}
         path="/"
         secure={isProd}
-        debug={process.env.NODE_ENV === 'production' ? 0 : 2}
+        debug={isProd ? 2 : 2}
       />
     </BrowserRouter>
   );

@@ -168,7 +168,6 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 	constructor(id?: string | PeerOptions, options?: PeerOptions) {
 		super();
-
 		let userId: string | undefined;
 
 		// Deal with overloading
@@ -179,7 +178,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 		}
 
 		// Configurize options
-		options = {
+		this._options = {
 			debug: 0, // 1: Errors, 2: Warnings, 3: All logs
 			host: util.CLOUD_HOST,
 			port: util.CLOUD_PORT,
@@ -190,7 +189,6 @@ export class Peer extends EventEmitter<PeerEvents> {
 			referrerPolicy: "strict-origin-when-cross-origin",
 			...options,
 		};
-		this._options = options;
 
 		// Detect relative URL host.
 		if (this._options.host === "/") {
@@ -207,15 +205,6 @@ export class Peer extends EventEmitter<PeerEvents> {
 			}
 		}
 
-		// Set whether we use SSL to same as current host
-		if (
-			this._options.secure === undefined &&
-			this._options.host !== util.CLOUD_HOST
-		) {
-			this._options.secure = util.isSecure();
-		} else if (this._options.host == util.CLOUD_HOST) {
-			this._options.secure = true;
-		}
 		// Set a custom log function if present
 		if (this._options.logFunction) {
 			logger.setLogFunction(this._options.logFunction);
@@ -223,7 +212,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 		logger.logLevel = this._options.debug || 0;
 
-		this._api = new API(options);
+		this._api = new API(this._options);
 		this._socket = this._createServerConnection();
 
 		// Sanity checks
@@ -254,12 +243,12 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 	private _createServerConnection(): Socket {
 		const socket = new Socket(
-			this._options.secure,
-			this._options.host!,
-			this._options.port!,
-			this._options.path!,
-			this._options.key!,
-			this._options.pingInterval,
+			this._options?.secure,
+			this._options?.host || '::',
+			this._options?.port || 9000,
+			this._options?.path || '/',
+			this._options?.key || '',
+			this._options?.pingInterval,
 		);
 
 		socket.on(SocketEventType.Message, (data: ServerMessage) => {
@@ -296,7 +285,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 	/** Initialize a connection with the server. */
 	private _initialize(id: string): void {
 		this._id = id;
-		this.socket.start(id, this._options.token!);
+		this.socket.start(id, this._options?.token || '');
 	}
 
 	/** Handles messages from the server. */
@@ -320,7 +309,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 			case ServerMessageType.InvalidKey: // The given API key cannot be found.
 				this._abort(
 					PeerErrorType.InvalidKey,
-					`API KEY "${this._options.key}" is invalid`,
+					`API KEY "${this._options?.key}" is invalid`,
 				);
 				break;
 			case ServerMessageType.Leave: // Another peer has closed its connection to this peer.

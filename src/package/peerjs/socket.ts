@@ -30,7 +30,7 @@ export class Socket extends EventEmitter {
 		private readonly pingInterval: number = 5000,
 	) {
 		super();
-
+		logger.log('secure', secure)
 		const wsProtocol = secure ? "wss://" : "ws://";
 
 		this._baseUrl = `${wsProtocol + host  }:${  port  }${path  }peerjs?key=${  key}`;

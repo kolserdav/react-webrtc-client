@@ -1,5 +1,6 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import axios from 'axios';
+import { isProd } from './package/utils/constants';
 
 interface RequestProps {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -43,5 +44,14 @@ const request = async (props: RequestProps): Promise<any> => {
       });
   });
 };
+
+export const getRoomId = async () =>
+  request({
+    // TODO repair
+    url: `${isProd ? 'https' : 'http'}://${process.env.REACT_APP_STUN_SERVER}:${
+      process.env.REACT_APP_STUN_PORT
+    }/room`,
+    method: 'POST',
+  });
 
 export default request;

@@ -1,16 +1,11 @@
 import React, { useMemo } from 'react';
-import Main from './dist/Main.esm';
-import './dist/Main.css';
+import Main from './package/Main';
+// import './dist/Main.css';
 import './App.scss';
-import request from './request';
+import { getRoomId } from './request';
 
 const createRoom = async () => {
-  const res = await request({
-    url: `${process.env.NODE_ENV === 'production' ? 'https' : 'http'}://${
-      process.env.REACT_APP_STUN_SERVER
-    }:${process.env.REACT_APP_STUN_PORT}/room`,
-    method: 'POST',
-  });
+  const res = await getRoomId();
   const { type, value } = res;
   const { roomId, userId } = value;
   if (type === 'room') {

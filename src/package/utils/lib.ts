@@ -1,6 +1,5 @@
 import { Peer } from './peer';
 import { SESSION_STORAGE_USERS } from './constants';
-import store from './store';
 
 export interface Video {
   stream: MediaStream;
