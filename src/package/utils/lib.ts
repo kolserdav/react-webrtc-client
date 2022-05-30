@@ -1,6 +1,5 @@
 import { Peer } from './peer';
 import { SESSION_STORAGE_USERS } from './constants';
-import Console from './console';
 
 export interface Video {
   stream: MediaStream;
@@ -55,17 +54,17 @@ export const sendMessage = async ({
   if (connection) {
     return new Promise((resolve) => {
       connection.on('open', () => {
-        Console.info('Event', { type: 'messageonopen', value: id });
+        console.info('Connection on open');
         connection.send({ type, value });
         resolve(0);
       });
       connection.on('error', (e) => {
-        Console.error('Error send ws message', e);
+        console.error(e);
         resolve(1);
       });
     });
   }
-  Console.warn('Connection is', connection);
+  console.warn('Connection is', connection);
 
   return 1;
 };

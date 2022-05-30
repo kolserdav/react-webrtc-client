@@ -322,7 +322,7 @@ export const loadRoom = async ({
         }
         Console.info('Event', data);
       });
-      Console.info('Event', { type: 'connection', value: conn.connectionId });
+      Console.info('Event', { type: 'connection', value: conn });
     });
     // TODO refactor destroy
     peer.on('error', (err) => {

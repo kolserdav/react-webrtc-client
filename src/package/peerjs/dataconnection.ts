@@ -75,7 +75,7 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 		this.label = this.options.label || this.connectionId;
 		this.serialization = this.options.serialization || SerializationType.Binary;
 		this.reliable = !!this.options.reliable;
-
+		console.log(78, this._encodingQueue)
 		if (this._encodingQueue) {
 			this._encodingQueue.on("done", (ab: ArrayBuffer) => {
 				this._bufferedSend(ab);
