@@ -293,7 +293,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 		const {type} = message;
 		const {payload} = message;
 		const peerId = message.src;
-
+		console.log(295, type)
 		switch (type) {
 			case ServerMessageType.Open: // The connection to the server is open.
 				this._lastServerId = this.id;
