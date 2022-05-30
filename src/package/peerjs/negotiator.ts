@@ -240,6 +240,8 @@ export class Negotiator {
 				this.connection.options.constraints,
 			);
 
+			console.log(offer.sdp)
+
 			logger.log("Created offer.");
 
 			if (

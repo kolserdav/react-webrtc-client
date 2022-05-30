@@ -23,7 +23,6 @@ import type {
 	CallOption,
 } from "./optionInterfaces";
 
-let att= 0;
 class PeerOptions implements PeerJSOption {
 	debug?: LogLevel; // 1: Errors, 2: Warnings, 3: All logs
 
@@ -294,13 +293,6 @@ export class Peer extends EventEmitter<PeerEvents> {
 		const {type} = message;
 		const {payload} = message;
 		const peerId = message.src;
-		console.log(type)
-		if (type === 'CANDIDATE') {
-			att++
-		}
-		if (att> 1) {
-			return;
-		}
  		switch (type) {
 			case ServerMessageType.Open: // The connection to the server is open.
 				this._lastServerId = this.id;
