@@ -53,12 +53,16 @@ export const sendMessage = async ({
   const connection = peer.connect(id);
   console.log(0);
   if (connection) {
-    console.log(1);
+    console.log(id);
     return new Promise((resolve) => {
       connection.on('open', () => {
         console.info('Connection on open');
         connection.send({ type, value });
         resolve(0);
+      });
+      connection.on('error', (e) => {
+        console.error(e);
+        resolve(1);
       });
     });
   }
