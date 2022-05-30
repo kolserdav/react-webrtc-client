@@ -337,6 +337,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 
 				// Create a new connection.
 				if (payload.type === ConnectionType.Media) {
+					console.log(340)
 					const mediaConnection = new MediaConnection(peerId, this, {
 						connectionId,
 						_payload: payload,
@@ -346,6 +347,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 					this._addConnection(peerId, connection);
 					this.emit("call", mediaConnection);
 				} else if (payload.type === ConnectionType.Data) {
+					console.log(349)
 					const dataConnection = new DataConnection(peerId, this, {
 						connectionId,
 						_payload: payload,
@@ -423,7 +425,7 @@ export class Peer extends EventEmitter<PeerEvents> {
 	 * @param options for specifying details about Peer Connection
 	 */
 	connect(peer: string, options: PeerConnectOption = {}): DataConnection | null {
-
+		console.log(426, options)
 		const dataConnection = new DataConnection(peer, this, options);
 		this._addConnection(peer, dataConnection);
 		return dataConnection;
