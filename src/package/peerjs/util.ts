@@ -22,7 +22,7 @@ class Util {
 	// eslint-disable-next-line class-methods-use-this
 	noop(): void {/** */}
 
-	readonly CLOUD_HOST = "/";
+	readonly CLOUD_HOST = "0.peerjs.com";
 
 	readonly CLOUD_PORT = 443;
 
