@@ -15,7 +15,7 @@ function Main() {
         host={process.env.REACT_APP_STUN_SERVER as string}
         path="/"
         secure={isProd}
-        debug={isProd ? 2 : 2}
+        debug={2}
       />
     </BrowserRouter>
   );

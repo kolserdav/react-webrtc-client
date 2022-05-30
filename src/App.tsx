@@ -15,7 +15,6 @@ const createRoom = async () => {
 
 function App() {
   const { pathname } = window.location;
-
   const room = useMemo(() => /\/\d{12}/.test(pathname), [pathname]);
 
   return (
