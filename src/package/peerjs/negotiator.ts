@@ -246,9 +246,11 @@ export class Negotiator {
 				this.connection.options.sdpTransform &&
 				typeof this.connection.options.sdpTransform === "function"
 			) {
+				console.log(249)
 				offer.sdp =
 					this.connection.options.sdpTransform(offer.sdp) || offer.sdp;
 			}
+			console.log(offer.sdp)
 
 			try {
 				await peerConnection.setLocalDescription(offer);
