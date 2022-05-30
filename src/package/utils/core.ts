@@ -245,6 +245,10 @@ export const loadRoom = async ({
               peer.call(call.peer, streams[item], { metadata: { id: item } });
             }
           });
+          if (getUniqueUser({ userId: call.peer, list: users }) && call.peer !== roomId) {
+            users.push(call.peer);
+            saveUsers({ users });
+          }
         });
       } else {
         call.on('stream', (remoteStream, connectionId) => {
@@ -280,10 +284,6 @@ export const loadRoom = async ({
         const { value } = data as { value: string[] };
         switch (data.type) {
           case 'connect':
-            if (getUniqueUser({ userId: _id, list: users })) {
-              users.push(_id);
-              saveUsers({ users });
-            }
             sendMessage({
               peer,
               type: 'onconnect',
@@ -329,21 +329,19 @@ export const loadRoom = async ({
     });
     // Connect to room
     if (isRoom) {
-      if (getUniqueUser({ userId, list: users }) && userId !== roomId) {
-        users.push(userId);
-        saveUsers({ users });
-      }
       if (!loadedRoom) {
         loadedRoom = true;
         loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
       }
     } else {
+      /*
       sendMessage({
         type: 'connect',
         peer,
         value: [userId],
         id: roomId,
-      });
+      }); */
+      loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
     }
     Console.info('Event', { type: 'open', value: id });
   });
