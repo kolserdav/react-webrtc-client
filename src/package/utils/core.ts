@@ -8,12 +8,9 @@ import store from './store';
 const _users = getSessionUsers();
 const users: string[] = _users || [];
 const streams: Record<string, MediaStream> = {};
-
 let isRoom = false;
 let loadedRoom = false;
-
 export const getSupports = () => util.supports;
-
 export const getPeer = ({
   path,
   port,
@@ -38,7 +35,6 @@ export const getPeer = ({
   });
   return peer;
 };
-
 export const removeDisconnected = ({ userId }: { userId: string }) => {
   const state = store.getState();
   const { added } = state;
@@ -54,7 +50,6 @@ export const removeDisconnected = ({ userId }: { userId: string }) => {
     });
   }
 };
-
 export const addVideoStream = ({ stream, id }: { stream: MediaStream; id: string }): void => {
   const state = store.getState();
   const { added } = state;
@@ -82,7 +77,6 @@ export const addVideoStream = ({ stream, id }: { stream: MediaStream; id: string
     Console.warn('Added list not found in store');
   }
 };
-
 const callToRoom = ({
   stream,
   roomId,
@@ -122,7 +116,6 @@ const callToRoom = ({
     Console.error('Call is null: 78');
   }
 };
-
 export const loadSelfStreamAndCallToRoom = ({
   roomId,
   userId,
@@ -137,6 +130,7 @@ export const loadSelfStreamAndCallToRoom = ({
   // Load self stream
   navigator.mediaDevices[shareScreen ? 'getDisplayMedia' : 'getUserMedia']({
     video: true,
+    audio: true,
   })
     .then((stream) => {
       addVideoStream({
@@ -159,7 +153,6 @@ export const loadSelfStreamAndCallToRoom = ({
       Console.error('Failed to get local stream', err);
     });
 };
-
 const removeOneUser = ({ userId }: { userId: string }) => {
   const userIndex = users.indexOf(userId);
   if (userIndex !== -1) {
@@ -168,10 +161,8 @@ const removeOneUser = ({ userId }: { userId: string }) => {
     delete streams[userId];
   }
 };
-
 const getUniqueUser = ({ userId, list }: { userId: string; list: string[] }) =>
   list.filter((item) => item === userId).length === 0;
-
 const dropUser = ({ roomId, userId, peer }: { roomId: string; userId: string; peer: Peer }) => {
   removeOneUser({ userId });
   removeDisconnected({
@@ -188,7 +179,6 @@ const dropUser = ({ roomId, userId, peer }: { roomId: string; userId: string; pe
     }
   });
 };
-
 const emptyRoomHandler = ({ peer, roomId }: { peer: Peer; roomId: string }) => {
   if (users.length === 1) {
     setTimeout(() => {
@@ -203,7 +193,6 @@ const emptyRoomHandler = ({ peer, roomId }: { peer: Peer; roomId: string }) => {
     }, 3000);
   }
 };
-
 export const loadRoom = async ({
   peer,
   roomId,
@@ -245,10 +234,6 @@ export const loadRoom = async ({
               peer.call(call.peer, streams[item], { metadata: { id: item } });
             }
           });
-          if (getUniqueUser({ userId: call.peer, list: users }) && call.peer !== roomId) {
-            users.push(call.peer);
-            saveUsers({ users });
-          }
         });
       } else {
         call.on('stream', (remoteStream, connectionId) => {
@@ -284,6 +269,10 @@ export const loadRoom = async ({
         const { value } = data as { value: string[] };
         switch (data.type) {
           case 'connect':
+            if (getUniqueUser({ userId: _id, list: users })) {
+              users.push(_id);
+              saveUsers({ users });
+            }
             sendMessage({
               peer,
               type: 'onconnect',
@@ -329,20 +318,21 @@ export const loadRoom = async ({
     });
     // Connect to room
     if (isRoom) {
+      if (getUniqueUser({ userId, list: users }) && userId !== roomId) {
+        users.push(userId);
+        saveUsers({ users });
+      }
       if (!loadedRoom) {
         loadedRoom = true;
         loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
       }
     } else {
-      /*
       sendMessage({
         type: 'connect',
         peer,
         value: [userId],
         id: roomId,
-      }); */
-      loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
+      });
     }
-    Console.info('Event', { type: 'open', value: id });
   });
 };

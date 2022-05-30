@@ -14,7 +14,7 @@ export interface UtilSupportsObj {
 }
 
 const DEFAULT_CONFIG = {
-	iceServers: [],
+	iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 	sdpSemantics: "unified-plan",
 };
 
