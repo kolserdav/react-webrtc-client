@@ -77,7 +77,7 @@ function Router({
     () => getPeer({ userId: _userId, path, port, host, debug, secure }),
     [userId, path, port, host, debug, secure, restart]
   );
-
+  console.log(peer);
   useEffect(() => {
     const supports = getSupports();
     if (!supports.webRTC) {

@@ -7,3 +7,5 @@ export const RENDER_DELAY = 500;
 export const isProd = process.env.NODE_ENV === 'production';
 export const SESSION_STORAGE_USER_ID = 'call-usr-id';
 export const SESSION_STORAGE_USERS = 'call-users-room';
+export const PROD_DEBUG_LEVEL = 2;
+export const DEV_DEBUG_LEVEL = 2;

@@ -10,9 +10,7 @@ const Console = {
     }
   },
   info: (type: 'Event', ...args: any) => {
-    if (isDev) {
-      console.info(type, ...args);
-    }
+    console.info(type, ...args);
   },
   warn: (type: string, ...args: any) => {
     if (isDev) {

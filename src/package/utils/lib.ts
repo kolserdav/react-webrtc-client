@@ -105,6 +105,7 @@ export const getWidthOfItem = ({
     const w = width / dims.cols;
     const h = height / dims.rows;
     a = coeff > 1 ? w : h;
+    a = a > width ? width : a > height ? height : a;
   }
   return {
     width: Math.ceil(a),
