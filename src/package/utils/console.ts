@@ -1,9 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { isProd, PROD_DEBUG_LEVEL, DEV_DEBUG_LEVEL } from '../utils';
 
-const _logLevel: any = isProd ? PROD_DEBUG_LEVEL : DEV_DEBUG_LEVEL;
-const logLevel = parseInt(_logLevel, 10);
+const logLevel = 3;
 
 const Console = {
   log: (line: number, ...args: any) => {
