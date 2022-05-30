@@ -83,7 +83,7 @@ function Router({
       }),
     [userId, path, port, host, debug, secure, restart]
   );
-  console.log(peer.id);
+
   useEffect(() => {
     const supports = getSupports();
     if (!supports.webRTC) {

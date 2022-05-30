@@ -322,7 +322,7 @@ export const loadRoom = async ({
         }
         Console.info('Event', data);
       });
-      Console.info('Event', { type: 'connection', value: conn });
+      Console.info('Event', { type: 'connection', value: conn.connectionId });
     });
     // TODO refactor destroy
     peer.on('error', (err) => {
@@ -339,14 +339,12 @@ export const loadRoom = async ({
         loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
       }
     } else {
-      setTimeout(() => {
-        sendMessage({
-          type: 'connect',
-          peer,
-          value: [userId],
-          id: roomId,
-        });
-      }, 3000);
+      sendMessage({
+        type: 'connect',
+        peer,
+        value: [userId],
+        id: roomId,
+      });
     }
     Console.info('Event', { type: 'open', value: id });
   });

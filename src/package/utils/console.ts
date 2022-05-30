@@ -1,24 +1,26 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { isProd, PROD_DEBUG_LEVEL, DEV_DEBUG_LEVEL } from '../utils';
 
-const isDev = process.env.NODE_ENV !== 'production';
+const _logLevel: any = isProd ? PROD_DEBUG_LEVEL : DEV_DEBUG_LEVEL;
+const logLevel = parseInt(_logLevel, 10);
 
 const Console = {
   log: (line: number, ...args: any) => {
-    if (isDev) {
-      console.log(line, ...args);
-    }
+    console.log(line, ...args);
   },
   info: (type: 'Event', ...args: any) => {
-    console.info(type, ...args);
+    if (logLevel >= 3) {
+      console.info(type, ...args);
+    }
   },
   warn: (type: string, ...args: any) => {
-    if (isDev) {
+    if (logLevel >= 2) {
       console.warn(type, ...args);
     }
   },
   error: (type: string, ...args: any) => {
-    if (isDev) {
+    if (logLevel >= 1) {
       console.error(type, ...args);
     }
   },
