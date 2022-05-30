@@ -59,6 +59,8 @@ export const sendMessage = async ({
       });
     });
   }
+  console.warn('Connection is', connection);
+
   return 1;
 };
 
