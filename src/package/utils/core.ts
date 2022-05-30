@@ -346,5 +346,6 @@ export const loadRoom = async ({
         id: roomId,
       });
     }
+    Console.info('Event', { type: 'open', value: id });
   });
 };
