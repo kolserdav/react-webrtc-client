@@ -1,3 +1,3 @@
-export * from 'peerjs';
-// export * from '../peerjs/util';
-// export * from '../peerjs/dataconnection';
+export * from '../peerjs/peer';
+export * from '../peerjs/util';
+export * from '../peerjs/dataconnection';
