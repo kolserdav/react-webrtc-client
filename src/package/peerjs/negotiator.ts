@@ -154,9 +154,9 @@ export class Negotiator {
 
 			const dataChannel = evt.channel;
 			if (provider) {
-				const connection = <DataConnection>(
+				const connection = (
 					provider.getConnection(peerId, connectionId)
-				);
+				) as DataConnection;
 	
 				connection.initialize(dataChannel);
 			} else {
@@ -175,7 +175,7 @@ export class Negotiator {
 				const connection = provider.getConnection(peerId, connectionId);
 				if (connection) {
 					if (connection.type === ConnectionType.Media) {
-						const mediaConnection = <MediaConnection>connection;
+						const mediaConnection = connection as MediaConnection;
 	
 						this._addStreamToMediaConnection(stream, mediaConnection);
 					}

@@ -2,7 +2,6 @@
 import { EventEmitter } from "eventemitter3";
 import logger from "./logger";
 import { SocketEventType, ServerMessageType } from "./enums";
-import { isRoom } from "../utils";
 
 /**
  * An abstraction on top of WebSockets to provide fastest
@@ -32,7 +31,7 @@ export class Socket extends EventEmitter {
 	) {
 		super();
 		logger.log('secure', secure)
-		const wsProtocol = secure && !isRoom ? "wss://" : "ws://";
+		const wsProtocol = secure ? "wss://" : "ws://";
 
 		this._baseUrl = `${wsProtocol + host  }:${  port  }${path  }peerjs?key=${  key}`;
 	}

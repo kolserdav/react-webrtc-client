@@ -339,12 +339,14 @@ export const loadRoom = async ({
         loadSelfStreamAndCallToRoom({ roomId, userId, peer, shareScreen });
       }
     } else {
-      sendMessage({
-        type: 'connect',
-        peer,
-        value: [userId],
-        id: roomId,
-      });
+      setTimeout(() => {
+        sendMessage({
+          type: 'connect',
+          peer,
+          value: [userId],
+          id: roomId,
+        });
+      }, 3000);
     }
     Console.info('Event', { type: 'open', value: id });
   });

@@ -75,8 +75,8 @@ function Router({
     () =>
       getPeer({
         userId: _userId,
-        path: isRoom ? 'localhost' : path,
-        port: isRoom ? 9000 : port,
+        path,
+        port,
         host,
         debug,
         secure,
