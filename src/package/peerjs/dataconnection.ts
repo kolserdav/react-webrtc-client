@@ -78,6 +78,7 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 		console.log(78, this._encodingQueue)
 		if (this._encodingQueue) {
 			this._encodingQueue.on("done", (ab: ArrayBuffer) => {
+				console.log('done')
 				this._bufferedSend(ab);
 			});
 	
@@ -90,6 +91,9 @@ export class DataConnection extends BaseConnection implements IDataConnection {
 		} else {
 			logger.warn('Encoding queue is null: 79', this._encodingQueue)
 		}
+		console.log(94, options)
+		console.log(95, this, this.options)
+		// TODO metadata is undefined
 		this._negotiator = new Negotiator(this, options.metadata?.id);
 
 		this._negotiator.startConnection(
