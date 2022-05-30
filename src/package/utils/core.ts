@@ -137,7 +137,6 @@ export const loadSelfStreamAndCallToRoom = ({
   // Load self stream
   navigator.mediaDevices[shareScreen ? 'getDisplayMedia' : 'getUserMedia']({
     video: true,
-    audio: true,
   })
     .then((stream) => {
       addVideoStream({
