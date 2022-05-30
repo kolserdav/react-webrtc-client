@@ -213,7 +213,7 @@ export const loadRoom = async ({
     }
     // Listen incoming call
     peer.on('call', (call) => {
-      call.answer(null);
+      call.answer(new MediaStream());
       if (isRoom) {
         call.on('stream', (stream) => {
           // save user stream
