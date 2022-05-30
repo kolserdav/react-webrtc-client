@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import queryString from 'query-string';
-import { loadRoom, getSupports, SESSION_STORAGE_USER_ID, getPeer } from '../../utils';
+import { loadRoom, getSupports, SESSION_STORAGE_USER_ID, getPeer, isRoom } from '../../utils';
 import s from './Router.module.scss';
 import {
   useOnclickClose,
@@ -43,8 +43,6 @@ function Router({
   const { userId } = useMemo(() => queryString.parse(search.replace('?', '')), [search]) as {
     userId: string | undefined;
   };
-
-  const isRoom = location.search === '?room=1';
 
   const [shareScreen, setShareScreen] = useState<boolean>(false);
   const [supported, setSupported] = useState<boolean>(false);
