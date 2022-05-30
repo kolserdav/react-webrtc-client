@@ -22,22 +22,29 @@
     "sourceType": "module"
   },
   "plugins": ["@typescript-eslint", "react", "prettier", "eslint-plugin-prettier"],
-  "ignorePatterns": ["src/dist/*", "peerjs-server/*", "example/*", "peerjs/*"],
+  "ignorePatterns": ["src/dist/*", "peerjs-server/*", "example/*"],
   "rules": {
     "react/react-in-jsx-scope": 2,
     "prettier/prettier": 1,
-    "react/jsx-filename-extension": [1, { "extensions": [".tsx", "jsx"] }],
+    "react/jsx-filename-extension": [
+      1,
+      { "extensions": [".tsx", ".jsx", ".css", ".scss", ".esm", ".hooks"] }
+    ],
     "import/no-unresolved": 0,
     "import/extensions": [
       2,
       "never",
       {
         "ts": "always",
-        "tsx": "always"
+        "tsx": "always",
+        "hooks": "always"
       }
     ],
     "no-unused-vars": 1,
     "no-underscore-dangle": 0,
-    "no-plusplus": 0
+    "no-plusplus": 0,
+    "import/prefer-default-export": 1,
+    "jsx-a11y/media-has-caption": 0,
+    "no-nested-ternary": 0
   }
 }

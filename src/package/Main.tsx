@@ -1,25 +1,28 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import Router from './components/Router/Router';
+import { isProd, PROD_DEBUG_LEVEL, DEV_DEBUG_LEVEL } from './utils/constants';
 
 /**
  * Main component of library
  */
 
-interface MainProps {
-  test?: boolean;
-}
-
-function Main({ test }: MainProps) {
+function Main() {
   return (
     <BrowserRouter>
-      <Router port={9000} host="192.168.0.3" path="/" />
+      <Router
+        port={parseInt(process.env.REACT_APP_STUN_PORT as string, 10)}
+        host={process.env.REACT_APP_STUN_SERVER as string}
+        path="/"
+        secure={isProd}
+        debug={isProd ? PROD_DEBUG_LEVEL : DEV_DEBUG_LEVEL}
+      />
     </BrowserRouter>
   );
 }
 
 Main.defaultProps = {
-  test: false,
+  userId: '',
 };
 
 export default Main;

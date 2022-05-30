@@ -1,212 +1,174 @@
-/* eslint-disable import/no-relative-packages */
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { useLocation } from 'react-router-dom';
-import { Peer } from '../../../../peerjs';
-
+import { useLocation, useNavigate } from 'react-router-dom';
+import queryString from 'query-string';
+import { loadRoom, getSupports, SESSION_STORAGE_USER_ID, getPeer, isRoom } from '../../utils';
 import s from './Router.module.scss';
+import {
+  useOnclickClose,
+  useOnClickVideo,
+  usePressEscape,
+  useUsers,
+  useVideoDimensions,
+} from './Roouter.hooks';
+import CloseButton from '../CloseButton/CloseButton';
 
-interface RouterProps {
+const sessionUser = sessionStorage.getItem(SESSION_STORAGE_USER_ID);
+let _sessionUser = '';
+
+/**
+ * TODO
+ * controls
+ * admin
+ */
+
+function Router({
+  port,
+  host,
+  path,
+  secure,
+  debug,
+}: {
   port: number;
   host: string | 'localhost' | '127.0.0.1';
   path: string | '/';
-}
+  secure?: boolean;
+  debug?: 0 | 1 | 2 | 3;
+}) {
+  const container = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const _location = useLocation();
+  const location = { ..._location };
+  location.pathname = location.pathname.replace(/^\//, '');
+  const { pathname, search } = location;
+  const { userId } = useMemo(() => queryString.parse(search.replace('?', '')), [search]) as {
+    userId: string | undefined;
+  };
 
-const getPeer = ({
-  path,
-  port,
-  host,
-  id,
-}: {
-  id: string;
-  path: string;
-  port: number;
-  host: string;
-}): Peer => {
-  const peer = new Peer(id, {
-    port,
-    path,
-    host,
+  const [shareScreen, setShareScreen] = useState<boolean>(false);
+  const [supported, setSupported] = useState<boolean>(false);
+  const [restart, setRestart] = useState<boolean>(false);
+
+  const _userId = useMemo(
+    () =>
+      isRoom ? pathname : userId || sessionUser || _sessionUser || new Date().getTime().toString(),
+    []
+  );
+  const cId = _userId.replace(/^\d/, '');
+
+  if (!sessionUser) {
+    sessionStorage.setItem(SESSION_STORAGE_USER_ID, _userId);
+  }
+  if (_sessionUser) {
+    _sessionUser = _userId;
+  }
+
+  const { users, streams } = useUsers();
+
+  const setVideoDimensions = useVideoDimensions({
+    container: container.current,
+    length: users.length,
   });
-  return peer;
-};
-
-function Router({ port, host, path }: RouterProps) {
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
-  const pathname = location.pathname.replace(/^\//, '');
-  const [users, setUsers] = useState<string[]>([]);
-  const [peer, setPeer] = useState<Peer>();
-
-  const userId = useMemo(() => uuidv4(), []);
-
-  const addVideoStream = ({
-    stream,
-    id,
-    self,
-  }: {
-    stream: MediaProvider;
-    id: string;
-    self?: boolean;
-  }) => {
-    const video = document.createElement('video');
-    // eslint-disable-next-line no-param-reassign
-    video.srcObject = stream;
-    video.setAttribute('id', id);
-    video.addEventListener('loadedmetadata', () => {
-      video.play();
-      if (self) {
-        video.setAttribute('style', 'margin: 1rem; box-shadow: 10px 5px 5px purple;');
-      } else {
-        video.setAttribute('style', 'margin: 1rem;');
-      }
-      const { current } = videoContainerRef;
-      let match = false;
-      if (current) {
-        const { children } = current;
-        for (let i = 0; children[i]; i++) {
-          const child = children[i];
-          if (child.getAttribute('id') === id) {
-            match = true;
-          }
-        }
-      }
-      if (!match) {
-        videoContainerRef.current?.append(video);
-      }
-    });
-  };
-
-  const sendMessage = async ({
-    peer: _peer,
-    id,
-    value,
-    type,
-  }: {
-    peer: Peer;
-    value: any;
-    id: string;
-    type: any;
-  }): Promise<1 | 0> => {
-    const connection = _peer.connect(id);
-    return new Promise((resolve) => {
-      connection.on('open', () => {
-        connection.send({ type, value });
-        resolve(0);
-      });
-    });
-  };
+  const onClickVideo = useOnClickVideo();
+  const onClickClose = useOnclickClose({ container: container.current, length: users.length });
+  const onPressEscape = usePressEscape();
+  const peer = useMemo(
+    () =>
+      getPeer({
+        userId: _userId,
+        path,
+        port,
+        host,
+        debug,
+        secure,
+      }),
+    [userId, path, port, host, debug, secure, restart]
+  );
 
   useEffect(() => {
-    const _peer = getPeer({ port, host, path, id: userId });
-    setPeer(_peer);
-    _peer.on('open', (id) => {
-      if (pathname) {
-        sendMessage({
-          peer: _peer,
-          id: pathname,
-          value: userId,
-          type: 'connect',
-        });
-      }
-      _peer.on('call', (call) => {
-        navigator.mediaDevices
-          .getUserMedia({ video: true, audio: true })
-          .then((stream) => {
-            call.answer(stream);
-            call.on('stream', (remoteStream) => {
-              addVideoStream({
-                stream: remoteStream,
-                id: call.peer,
-              });
-            });
-          })
-          .catch((err) => {
-            console.error('Failed to get local stream', err);
-          });
-      });
-      _peer.on('connection', (conn) => {
-        const connectUserId = conn.peer;
-        if (users.indexOf(connectUserId) === -1) {
-          const _users = users.map((item) => item);
-          _users.push(connectUserId);
-          setUsers(_users);
-        }
-        // Other user disconnectted
-        conn.on('close', () => {
-          const _users = users.filter((item) => item !== connectUserId);
-          setUsers(_users);
-          const { current } = videoContainerRef;
-          if (current) {
-            const { children } = current;
-            for (let i = 0; children[i]; i++) {
-              const child = children[i];
-              if (child.getAttribute('id') === connectUserId) {
-                current.removeChild(child);
-              }
-            }
-          }
-        });
-        // Listen messages
-        conn.on('data', (data) => {
-          if (data.type === 'connect') {
-            sendMessage({
-              peer: _peer,
-              type: 'onconnect',
-              value: userId,
-              id: connectUserId,
-            });
-          }
-          // eslint-disable-next-line no-console
-          console.info('Event', data);
-        });
-      });
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .then((stream) => {
-          // Self video
-          addVideoStream({
-            stream,
-            id: userId,
-            self: true,
-          });
-          if (pathname) {
-            const call = _peer.call(pathname, stream);
-            call.on('stream', (remoteStream) => {
-              addVideoStream({
-                stream: remoteStream,
-                id: pathname,
-              });
-            });
-          }
-        })
-        .catch((err) => {
-          console.error('Failed to get local stream', err);
-        });
-    });
-    return () => {
-      _peer.off('call');
-      _peer.off('connection');
-    };
+    const supports = getSupports();
+    if (!supports.webRTC) {
+      // eslint-disable-next-line no-alert
+      alert(`Not supported browser ${JSON.stringify(supports)}`);
+      return;
+    }
+    setSupported(true);
   }, []);
 
-  const connectLink = `${window.location.origin}/${userId}`;
+  /**
+   * Create room
+   */
+  useEffect(() => {
+    if (!supported) {
+      return;
+    }
+    if (!peer.open) {
+      // Starting room after page load
+      loadRoom({
+        peer,
+        userId: _userId,
+        roomId: pathname,
+        shareScreen,
+      });
+    } else {
+      // Restarting
+      peer.disconnect();
+      peer.destroy();
+      setRestart(!restart);
+    }
+  }, [shareScreen, supported]);
 
+  useEffect(() => {
+    if (!supported) {
+      return;
+    }
+    loadRoom({
+      peer,
+      userId: _userId,
+      roomId: pathname,
+      shareScreen,
+    });
+  }, [restart]);
+
+  const connectLink = `${window.location.origin}/${pathname}`;
   return (
     <div className={s.wrapper}>
-      <div className={s.container} ref={videoContainerRef} />
-      <div className={s.users}>
-        {users.map((item) => (
-          <p key={item}>{item}</p>
+      <div className={s.container} id={cId} ref={container}>
+        {users.map((item, index) => (
+          <div key={item} className={s.video}>
+            <CloseButton onClick={onClickClose} onKeyDown={onPressEscape} tabindex={index} />
+            <video
+              ref={streams[item]?.ref}
+              id={item}
+              title={item}
+              autoPlay
+              onTimeUpdate={setVideoDimensions}
+              onClick={onClickVideo}
+            />
+          </div>
         ))}
       </div>
-      {!pathname && (
-        <a target="_blank" href={connectLink} rel="noreferrer">
+      <div className={s.actions}>
+        <a className={s.room__link} target="_blank" href={connectLink} rel="noreferrer">
           {connectLink}
         </a>
-      )}
+        <p className={s.room__link}>{_userId}</p>
+        {!shareScreen ? (
+          <button type="button" onClick={() => setShareScreen(true)}>
+            Share screen
+          </button>
+        ) : (
+          <button type="button" onClick={() => setShareScreen(false)}>
+            Stop share screen
+          </button>
+        )}
+      </div>
     </div>
   );
 }
+
+Router.defaultProps = {
+  secure: false,
+  debug: 0,
+};
 
 export default Router;
