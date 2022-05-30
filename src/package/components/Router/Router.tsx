@@ -74,7 +74,15 @@ function Router({
   const onClickClose = useOnclickClose({ container: container.current, length: users.length });
   const onPressEscape = usePressEscape();
   const peer = useMemo(
-    () => getPeer({ userId: _userId, path, port, host, debug, secure }),
+    () =>
+      getPeer({
+        userId: _userId,
+        path: isRoom ? 'localhost' : path,
+        port: isRoom ? 9000 : port,
+        host,
+        debug,
+        secure,
+      }),
     [userId, path, port, host, debug, secure, restart]
   );
   console.log(peer.id);
