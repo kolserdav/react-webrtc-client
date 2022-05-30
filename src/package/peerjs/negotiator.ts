@@ -103,7 +103,14 @@ export class Negotiator {
 		peerConnection.oniceconnectionstatechange = () => {
 			switch (peerConnection.iceConnectionState) {
 				case "failed":
-					console.log('failed');
+					logger.log(
+						`iceConnectionState is failed, closing connections to ${  peerId}`,
+					);
+					this.connection.emit(
+						ConnectionEventType.Error,
+						new Error(`Negotiation of connection to ${  peerId  } failed.`),
+					);
+					this.connection.close();
 					break;
 				case "closed":
 					logger.log(
